@@ -34,5 +34,6 @@ void uart_init(void) {
 }
 
 ISR(USART0_RXC_vect) {
+    char c = USART0.RXDATAL; // Acknowledge interrupt
     // For later...
 }
