@@ -2,7 +2,6 @@
 #include <avr/interrupt.h>
 #include <stdint.h>
 
-#include "display.h"
 #include "macros/display_macros.h"
 
 static uint8_t left_raw = DISP_OFF;
@@ -27,7 +26,7 @@ static void spi_write(uint8_t data) {
 /**
  * Initialises spi (with `spi_init()`) and display-related
  * peripherals.
- * 
+ *
  * @warning Enables DISP LATCH (PA1) as output.
  */
 void display_init(void) {
@@ -101,7 +100,7 @@ void display_multiplex(void) {
 /**
  * Drives DISP LATCH high and low after every complete write
  * to the SPI.
- * 
+ *
  */
 ISR(SPI0_INT_vect) {
     PORTA.OUTSET = PIN1_bm;
