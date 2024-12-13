@@ -1,3 +1,6 @@
+#ifndef DISPLAY_MACROS_H
+#define DISPLAY_MACROS_H
+
 #define DISP_FORCE_LEFT 0x80
 #define DISP_FORCE_RIGHT 0x7f
 #define DISP_OFF 0b1111111
@@ -11,3 +14,5 @@
 #define DISP_DIGIT_SEVEN 0x4b
 #define DISP_DIGIT_EIGHT 0x00
 #define DISP_DIGIT_NINE 0x01
+
+#endif

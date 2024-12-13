@@ -1,3 +1,6 @@
+#ifndef DISPLAY_H
+#define DISPLAY_H
+
 #include <stdint.h>
 
 void display_init(void);
@@ -9,3 +12,5 @@ void display_off(void);
 void display_num(uint16_t num);
 
 void display_multiplex(void);
+
+#endif

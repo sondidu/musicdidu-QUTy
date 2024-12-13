@@ -1,3 +1,6 @@
+#ifndef NOTES_H
+#define NOTES_H
+
 typedef enum Note {
     C_FLAT, C, C_SHARP,
     D_FLAT, D, D_SHARP,
@@ -7,3 +10,5 @@ typedef enum Note {
     A_FLAT, A, A_SHARP,
     B_FLAT, B, B_SHARP
 } Note;
+
+#endif

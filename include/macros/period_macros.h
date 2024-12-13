@@ -1,3 +1,5 @@
+#ifndef PERIOD_MACROS_H
+#define PERIOD_MACROS_H
 
 // CLK is DIV4 so: 833334
 // Formula: 20/6 * 10^6 / 4 / desired_freq
@@ -29,3 +31,5 @@
 #define NOTE_PER_B_FLAT NOTE_PER_A_SHARP
 
 #define OCTAVE_STANDARD 4
+
+#endif
