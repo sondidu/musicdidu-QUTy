@@ -1,8 +1,25 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
+#include <stdint.h>
 
 #include "buttons.h"
 #include "display.h"
+#include "macros/music_macros.h"
+
+/**
+ * Initialises TCB0 to generate an interrupt based on
+ * BPM, PPQN, subdivisions per tick.
+ * 
+ * @param bpm Beats per minute
+ * @warning Disables global interrupts.
+ */
+void tcb0_init(uint8_t bpm) {
+    cli();
+    TCB0.CCMP = (double) 60 / bpm / PPQN / SUBDIVS_PER_TICK * CLK_FREQ;
+    TCB0.CTRLB = TCB_CNTMODE_INT_gc;
+    TCB0.INTCTRL = TCB_CAPT_bm;
+    TCB0.CTRLA = TCB_ENABLE_bm;
+}
 
 /**
  * Initialises TCB1 to generate an interrupt every 5ms.
