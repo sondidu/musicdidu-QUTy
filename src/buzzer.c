@@ -1,10 +1,10 @@
 #include <avr/io.h>
 
 #include "buzzer.h"
-#include "macros/period_macros.h"
+#include "macros/note_macros.h"
 
 /**
- * Initialises buzzer @ 0.83 MHz (prescaler 4), initially silent.
+ * Initialises buzzer @ 1.67 MHz (prescaler 2), initially silent.
  *
  * @warning Enables buzzer (PB0) as output.
  */
@@ -12,7 +12,7 @@ void buzzer_init(void) {
     PORTB.DIRSET = PIN0_bm;
     TCA0.SINGLE.PER = 0; // Initially silent
     TCA0.SINGLE.CMP0 = 0;
-    TCA0.SINGLE.CTRLA = TCA_SINGLE_CLKSEL_DIV4_gc; // Prescaler 4 to cover all 8 octaves
+    TCA0.SINGLE.CTRLA = TCA_SINGLE_CLKSEL_DIV2_gc; // Prescaler 2 to cover octave 0 and beyond
     TCA0.SINGLE.CTRLB = TCA_SINGLE_WGMODE_SINGLESLOPE_gc | TCA_SINGLE_CMP0_bm;
     TCA0.SINGLE.CTRLA |= TCA_SINGLE_ENABLE_bm;
 }
