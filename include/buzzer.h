@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-#include "types/notes.h"
+#include "common/notes.h"
 
 void buzzer_init(void);
 
