@@ -4,8 +4,10 @@
 
 #include "macros/display_macros.h"
 
-static uint8_t left_raw = DISP_OFF;
-static uint8_t right_raw = DISP_OFF;
+static uint8_t left_raw = DISP_OFF | DISP_FORCE_LEFT; // Initially off
+static uint8_t right_raw = DISP_OFF & DISP_FORCE_RIGHT; // Initially off
+static uint8_t dp_side = 0;
+static uint8_t is_dp_on = 0;
 
 /**
  * Initialises SPI0 to read and write data in 
@@ -34,6 +36,10 @@ void display_init(void) {
     PORTA.DIRSET = PIN1_bm;
     PORTMUX.SPIROUTEA = PORTMUX_SPI0_ALT1_gc; // Reroutes to the correct ports for QUTy
     spi_init();
+
+    // Setup DP
+    PORTB.OUTSET = PIN5_bm;
+    PORTB.DIRSET = PIN5_bm;
 }
 
 /**
@@ -83,6 +89,19 @@ void display_num(uint16_t num) {
     display_raw(left, right);
 }
 
+void display_dp_side(uint8_t side) {
+    dp_side = side;
+}
+
+void display_dp_on(void) {
+    is_dp_on = 1;
+}
+
+void display_dp_off(void) {
+    is_dp_on = 0;
+    PORTB.OUTSET = PIN5_bm; // Manually dim
+}
+
 /**
  * Alternates writing left and right raw data to the SPI.
  *
@@ -91,6 +110,15 @@ void display_multiplex(void) {
     static uint8_t which_side = 0;
 
     uint8_t raw_data = which_side ? left_raw : right_raw;
+
+    // Lit DP at correct side
+    if (is_dp_on) {
+        if (which_side == dp_side) {
+            PORTB.OUTCLR = PIN5_bm; // Lit DP
+        } else {
+            PORTB.OUTSET = PIN5_bm; // Dim DP
+        }
+    }
 
     which_side = !which_side;
 
