@@ -21,6 +21,7 @@ void tcb0_init(uint8_t bpm) {
     TCB0.INTCTRL = TCB_CAPT_bm;
     TCB0.CTRLA = TCB_ENABLE_bm;
 }
+// TODO: Consider a separate function to enable TCB0 😉.
 
 /**
  * Initialises TCB1 to generate an interrupt every 5ms.
