@@ -1,8 +1,7 @@
-#ifndef MUSIC_SETTINGS_H
-#define MUSIC_SETTINGS_H
+#ifndef MUSIC_MACROS_H
+#define MUSIC_MACROS_H
 
-#define CLK_FREQ 3333333
+#define CLK_FREQ_DIV2 1666667
 #define PPQN 24
-#define SUBDIVS_PER_TICK 4
 
 #endif

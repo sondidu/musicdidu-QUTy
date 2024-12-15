@@ -7,19 +7,19 @@
 #include "macros/music_macros.h"
 
 /**
- * Initialises TCB0 to generate an interrupt based on
- * BPM, PPQN, subdivisions per tick.
- * 
+ * Initialises TCB0 @1.67 MHz (prescaler 2) to generate an
+ * interrupt based on BPM and PPQN.
+ *
  * @param bpm Beats per minute
  * @warning Disables global interrupts.
  */
 void tcb0_init(uint8_t bpm) {
     cli();
-    TCB0.CCMP = (double) 60 / bpm / PPQN / SUBDIVS_PER_TICK * CLK_FREQ;
+    TCB0.CCMP = (double) 60 / bpm / PPQN * CLK_FREQ_DIV2;
     TCB0.CNT = 0; // Resetting CNT as this function may be called multiple times.
     TCB0.CTRLB = TCB_CNTMODE_INT_gc;
     TCB0.INTCTRL = TCB_CAPT_bm;
-    TCB0.CTRLA = TCB_ENABLE_bm;
+    TCB0.CTRLA = TCB_CLKSEL_DIV2_gc | TCB_ENABLE_bm;
 }
 // TODO: Consider a separate function to enable TCB0 😉.
 
