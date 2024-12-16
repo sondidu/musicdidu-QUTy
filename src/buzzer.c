@@ -1,7 +1,7 @@
 #include <avr/io.h>
 
 #include "buzzer.h"
-#include "macros/note_macros.h"
+#include "macros/music_macros.h"
 
 /**
  * Initialises buzzer @ 1.67 MHz (prescaler 2), initially silent.
