@@ -15,7 +15,7 @@
  */
 void tcb0_init(uint8_t bpm) {
     cli();
-    TCB0.CCMP = 60.0 / bpm / PPQN * FREQ_CLK_DIV2;
+    TCB0.CCMP = (uint32_t) FREQ_CLK_DIV2 * 60 / bpm / PPQN;
     TCB0.CNT = 0; // Resetting CNT as this function may be called multiple times.
     TCB0.CTRLB = TCB_CNTMODE_INT_gc;
     TCB0.INTCTRL = TCB_CAPT_bm;
