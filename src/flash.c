@@ -85,19 +85,18 @@ int16_t read_line(FileReader* reader, char* buffer, uint8_t buffer_size) {
     // Update position
     reader->position += newline_offset;
     if (data[reader->position] == '\n') {
-        reader->position++; // Skip newline
+        reader->position++; // Skip newline char
     }
 
     return newline_offset;
 }
 
 uint8_t is_eof(FileReader* reader) {
-    // File is already closed
-    if (!reader->is_open || !reader->file) {
-        return 1;
-    }
+    uint8_t is_closed = !reader->is_open;
+    uint8_t is_file_null = !reader->file;
+    uint8_t is_position_at_end = reader->position >= reader->file->size;
 
-    return (reader->position >= reader->file->size);
+    return is_closed || is_file_null || is_position_at_end;
 }
 
 void close_file(FileReader* reader) {
