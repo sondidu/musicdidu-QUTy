@@ -1,2 +1,5 @@
 .pio
 .vscode/*
+
+# This file will be generated at build
+src/data.c 
