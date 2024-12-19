@@ -18,9 +18,8 @@ int8_t open_file(FileReader* reader, const char* filename) {
     }
 
     for (uint8_t i = 0; i < available_files_count; i++) {
-        const FlashFile current_file = available_files[i];
-        if (strcmp(filename, current_file.name) == 0) {
-            reader->file = &current_file;
+        if (strcmp(filename, available_files[i].name) == 0) {
+            reader->file = &available_files[i];
             reader->is_open = 1;
             reader->position = 0;
             return 0; // File opened
@@ -71,22 +70,21 @@ int16_t read_line(FileReader* reader, char* buffer, uint8_t buffer_size) {
     uint8_t newline_offset = to_read;
 
     // Search for newline
-    const char* data = reader->file->data;
+    const char* data = reader->file->data; // Prevents writing 'reader->file->data' all the time
+    uint8_t found_newline_flag = 0;
     for (uint8_t i = 0; i < to_read; i++) {
-        if (data[reader->position + i] == '\n') {
+        if (pgm_read_byte(&(data[reader->position + i])) == '\n') {
             newline_offset = i;
+            found_newline_flag = 1;
             break;
         }
     }
 
     // Copy line to buffer
-    memcpy_P(buffer, reader->file->data + reader->position, newline_offset);
+    memcpy_P(buffer, data + reader->position, newline_offset);
 
     // Update position
-    reader->position += newline_offset;
-    if (data[reader->position] == '\n') {
-        reader->position++; // Skip newline char
-    }
+    reader->position += (found_newline_flag) ? newline_offset + 1 : newline_offset;
 
     return newline_offset;
 }

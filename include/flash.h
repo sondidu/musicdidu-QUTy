@@ -6,7 +6,7 @@
 typedef struct {
     const char* data;
     const char* name;
-    const int16_t size;
+    const uint16_t size;
 } FlashFile;
 
 typedef struct {
