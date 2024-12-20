@@ -13,10 +13,6 @@ void display_num(uint16_t num);
 
 void display_dp_sides(uint8_t left, uint8_t right);
 
-void display_dp_on(void);
-
-void display_dp_off(void);
-
 void display_multiplex(void);
 
 #endif

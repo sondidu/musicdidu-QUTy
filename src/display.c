@@ -8,7 +8,6 @@ static uint8_t left_raw = DISP_OFF | DISP_FORCE_LEFT; // Initially off
 static uint8_t right_raw = DISP_OFF & DISP_FORCE_RIGHT; // Initially off
 static uint8_t dp_left = 0;
 static uint8_t dp_right = 0;
-static uint8_t is_dp_on = 0;
 
 /**
  * Initialises SPI0 to read and write data in 
@@ -90,18 +89,15 @@ void display_num(uint16_t num) {
     display_raw(left, right);
 }
 
+/**
+ * Displays which DP(s) to be lit.
+ *
+ * @param left Whether the left DP is lit.
+ * @param right Whether the right DP is lit.
+ */
 void display_dp_sides(uint8_t left, uint8_t right) {
     dp_left = left;
     dp_right = right;
-}
-
-void display_dp_on(void) {
-    is_dp_on = 1;
-}
-
-void display_dp_off(void) {
-    is_dp_on = 0;
-    PORTB.OUTSET = PIN5_bm; // Manually dim
 }
 
 /**
@@ -114,12 +110,10 @@ void display_multiplex(void) {
     uint8_t raw_data = (is_left) ? left_raw : right_raw;
 
     // Lit DP at correct side
-    if (is_dp_on) {
-        if ((is_left && dp_left) || (!is_left && dp_right)) {
-            PORTB.OUTCLR = PIN5_bm; // Lit DP
-        } else {
-            PORTB.OUTSET = PIN5_bm; // Dim DP
-        }
+    if ((is_left && dp_left) || (!is_left && dp_right)) {
+        PORTB.OUTCLR = PIN5_bm; // Lit DP
+    } else {
+        PORTB.OUTSET = PIN5_bm; // Dim DP
     }
 
     is_left = !is_left;
