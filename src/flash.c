@@ -5,12 +5,24 @@
 #include "data.h"
 #include "flash.h"
 
+/**
+ * Initializes the reader before use.
+ *
+ * @param reader The address of the reader.
+ */
 void reader_init(FileReader* reader) {
    reader->file = NULL;
    reader->is_open = 0;
    reader->position = 0;
 }
 
+/**
+ * Opens a file given a reader and the filename.
+ *
+ * @param reader The address of the reader.
+ * @param filename The filename.
+ * @return int8_t
+ */
 int8_t open_file(FileReader* reader, const char* filename) {
     if (reader->is_open) {
         return -1; // File already opened
@@ -28,6 +40,15 @@ int8_t open_file(FileReader* reader, const char* filename) {
     return -2; // File not found
 }
 
+/**
+ * Copys a chunk of chars from PROGMEM to a buffer, given a
+ * reader, buffer, and buffer size.
+ *
+ * @param reader The address of the reader.
+ * @param buffer The address of the buffer.
+ * @param buffer_size The buffer size.
+ * @return int16_t
+ */
 int16_t read_chunk(FileReader* reader, char* buffer, uint8_t buffer_size) {
     if (!reader->is_open || !reader->file) {
         return -1; // Nothing to read
@@ -51,6 +72,16 @@ int16_t read_chunk(FileReader* reader, char* buffer, uint8_t buffer_size) {
     return to_read;
 }
 
+/**
+ * Copys a line of data from PROGMEM to a buffer, given a
+ * reader, buffer and buffer size. A line is all chars from
+ * the reader's current position to '\n'.
+ *
+ * @param reader The address of the reader.
+ * @param buffer The address of the buffer.
+ * @param buffer_size The buffer size.
+ * @return int16_t
+ */
 int16_t read_line(FileReader* reader, char* buffer, uint8_t buffer_size) {
     if (!reader->is_open || !reader->file) {
         return -1; // Nothing to read
@@ -88,6 +119,12 @@ int16_t read_line(FileReader* reader, char* buffer, uint8_t buffer_size) {
     return newline_offset;
 }
 
+/**
+ * Returns whether it is the end of file.
+ *
+ * @param reader The address of the reader.
+ * @return uint8_t
+ */
 uint8_t is_eof(FileReader* reader) {
     uint8_t is_closed = !reader->is_open;
     uint8_t is_file_null = !reader->file;
@@ -96,6 +133,11 @@ uint8_t is_eof(FileReader* reader) {
     return is_closed || is_file_null || is_position_at_end;
 }
 
+/**
+ * Closes a file.
+ *
+ * @param reader The address of the reader.
+ */
 void close_file(FileReader* reader) {
     reader->file = NULL;
     reader->is_open = 0;
