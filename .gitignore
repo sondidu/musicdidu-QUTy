@@ -5,5 +5,5 @@
 src/data.c 
 
 # Ignore everything in sheets/ except example files
-sheets/*.txt
+sheets/*
 !sheets/example_*.txt
