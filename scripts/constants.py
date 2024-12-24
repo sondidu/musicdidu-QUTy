@@ -1,0 +1,5 @@
+
+BAR_OPEN = '['
+BAR_CLOSE = ']'
+SETTING_OPEN = '{'
+SETTING_CLOSE = '}'

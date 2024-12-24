@@ -1,5 +1,5 @@
 .pio
-.vscode/*
+.vscode/
 
 # This file will be generated at build
 src/data.c 
@@ -7,3 +7,5 @@ src/data.c
 # Ignore everything in sheets/ except example files
 sheets/*
 !sheets/example_*.txt
+
+scripts/__pycache__
