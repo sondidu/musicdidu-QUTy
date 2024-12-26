@@ -1,4 +1,5 @@
 from constants.note import *
+from constants import setting_fields
 
 def validate_note_structure(note_structure: str):
     splitted = note_structure.split(SEPARATOR_NOTE_STRUCTURE)
@@ -57,6 +58,36 @@ def validate_tuplet(tuplet: str):
 
 def validate_bar(bar: str):
     pass
+
+def validate_setting_field(setting_field: str):
+    splitted = setting_field.split(setting_fields.SEPARATOR_VALUE)
+
+    if len(splitted) != setting_fields.SPLITTED_FIELD_VALUE_LEN:
+        return False
+
+    field, value = splitted
+
+    if field == setting_fields.FIELD_BPM:
+        return value.isnumeric() and int(value) >= setting_fields.BPM_MIN
+
+    elif field == setting_fields.FIELD_SKIP_BARS:
+        return value.isnumeric() and int(value) > 0
+
+    elif field == setting_fields.FIELD_TIME_SIGNATURE:
+        time_signature_splitted = value.split(setting_fields.SEPARATOR_TIME_SIGNATURE)
+
+        if len(time_signature_splitted) != setting_fields.SPLITTED_TIME_SIGNATURE_LEN:
+            return False
+
+        top, bottom = time_signature_splitted
+
+        is_top_valid = top.isnumeric() and int(top) > 0
+        is_bottom_valid = bottom.isnumeric() and int(bottom) in VALID_DURATIONS
+
+        return is_top_valid and is_bottom_valid
+
+    return False
+
 
 def validate_setting_block(setting_block: str):
     pass
