@@ -39,3 +39,24 @@ def validate_note_structure(note_structure: str):
     all_additionals_valid = all(additional in VALID_ADDITIONALS for additional in additionals)
     no_slur_overlap = not (ADDITIONAL_SLUR_BEGIN in additionals and ADDITIONAL_SLUR_END in additionals)
     return all_additionals_unique and all_additionals_valid and no_slur_overlap
+
+def validate_break_structure(break_structure: str):
+    splitted = break_structure.split(SEPARATOR_BREAK)
+
+    if len(splitted) != BREAK_STRUCTURE_LEN:
+        return False
+
+    break_char, duration = splitted
+
+    is_valid_break = break_char == SYMBOL_BREAK
+    is_valid_duration = duration.isnumeric() and int(duration) in VALID_DURATIONS
+    return is_valid_break and is_valid_duration
+
+def validate_tuplet(tuplet: str):
+    pass
+
+def validate_bar(bar: str):
+    pass
+
+def validate_setting_block(setting_block: str):
+    pass
