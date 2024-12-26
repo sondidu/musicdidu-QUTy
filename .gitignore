@@ -8,4 +8,5 @@ src/data.c
 sheets/*
 !sheets/example_*.txt
 
-scripts/__pycache__
+# Ignore __pycache__/ wherever it is
+**/__pycache__/
