@@ -1,4 +1,4 @@
-from constants import BAR_OPEN, BAR_CLOSE, SETTING_OPEN, SETTING_CLOSE
+from constants.block import *
 
 def validate_blocks(content: str):
     bar_chars = set((BAR_OPEN, BAR_CLOSE))
