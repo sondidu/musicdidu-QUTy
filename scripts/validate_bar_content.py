@@ -1,5 +1,4 @@
-from constants.note import *
-from constants import setting_fields
+from constants.notes import *
 
 def validate_note_structure(note_structure: str):
     splitted = note_structure.split(SEPARATOR_NOTE_STRUCTURE)
@@ -22,7 +21,7 @@ def validate_note_structure(note_structure: str):
 
     # Check octave
     octave = note[NOTE_IDX_OCTAVE_SHORT if len(note) == NOTE_LEN_SHORT else NOTE_IDX_OCTAVE_LONG]
-    is_octave_valid = octave.isnumeric() and OCTAVE_MIN <= int(octave) <= OCTAVE_MAX
+    is_octave_valid = octave.isnumeric() and NOTE_OCTAVE_MIN <= int(octave) <= NOTE_OCTAVE_MAX
     if not is_octave_valid:
         return False
 
@@ -54,40 +53,4 @@ def validate_break_structure(break_structure: str):
     return is_valid_break and is_valid_duration
 
 def validate_tuplet(tuplet: str):
-    pass
-
-def validate_bar(bar: str):
-    pass
-
-def validate_setting_field(setting_field: str):
-    splitted = setting_field.split(setting_fields.SEPARATOR_VALUE)
-
-    if len(splitted) != setting_fields.SPLITTED_FIELD_VALUE_LEN:
-        return False
-
-    field, value = splitted
-
-    if field == setting_fields.FIELD_BPM:
-        return value.isnumeric() and int(value) >= setting_fields.BPM_MIN
-
-    elif field == setting_fields.FIELD_SKIP_BARS:
-        return value.isnumeric() and int(value) > 0
-
-    elif field == setting_fields.FIELD_TIME_SIGNATURE:
-        time_signature_splitted = value.split(setting_fields.SEPARATOR_TIME_SIGNATURE)
-
-        if len(time_signature_splitted) != setting_fields.SPLITTED_TIME_SIGNATURE_LEN:
-            return False
-
-        top, bottom = time_signature_splitted
-
-        is_top_valid = top.isnumeric() and int(top) > 0
-        is_bottom_valid = bottom.isnumeric() and int(bottom) in VALID_DURATIONS
-
-        return is_top_valid and is_bottom_valid
-
-    return False
-
-
-def validate_setting_block(setting_block: str):
     pass
