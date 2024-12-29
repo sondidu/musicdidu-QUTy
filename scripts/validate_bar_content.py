@@ -53,4 +53,28 @@ def validate_break_structure(break_structure: str):
     return is_valid_break and is_valid_duration
 
 def validate_tuplet(tuplet: str):
-    pass
+    if tuplet.count(TUPLET_RATIO) != TUPLET_RATIO_COUNT_EXPECTED:
+        return False
+
+    if tuplet[-1] != TUPLET_CLOSE:
+        return False
+
+    # '(' not found
+    if (tuplet_open_idx := tuplet.find(TUPLET_OPEN)) == -1:
+        return False
+
+    # Validating tuplet definition
+    tuplet_defs = tuplet[:tuplet_open_idx]
+    def_splitted = tuplet_defs.split(TUPLET_RATIO)
+
+    if not all(tuplet_def.isnumeric() for tuplet_def in def_splitted):
+        return False
+
+    grouping, no_regular_notes, regular_duration = def_splitted
+    if not int(regular_duration) in VALID_DURATIONS:
+        return False
+
+    # Validating individual notes in tuplet
+    tuplet_notes = tuplet[tuplet_open_idx + 1:-1]
+    notes_splitted = tuplet_notes.split(SEPARATOR_TUPLET_NOTE)
+    return all(validate_note_structure(note_structure) for note_structure in notes_splitted)
