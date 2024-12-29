@@ -1,4 +1,3 @@
-
 # Additional constants
 ADDITIONAL_DOTNOTE = '.'
 ADDITIONAL_FERMATA = '@'
