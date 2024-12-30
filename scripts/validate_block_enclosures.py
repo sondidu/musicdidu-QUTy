@@ -1,12 +1,13 @@
 from constants.block_enclosures import *
+from typing import IO
 
-def validate_block_enclosures(content: str):
+def validate_block_enclosures(file: IO):
     bar_chars = set((BAR_OPEN, BAR_CLOSE))
     setting_chars = set((SETTING_OPEN, SETTING_CLOSE))
     block_chars = bar_chars | setting_chars
     errors_count = 0
 
-    for line_no, line in enumerate(content.splitlines(), start=1):
+    for line_no, line in enumerate(file, start=1):
         bar_opened_idx = None
         setting_opened_idx = None
         nonblock_char_startidx = None
@@ -25,7 +26,7 @@ def validate_block_enclosures(content: str):
                 continue
 
             if nonblock_char_startidx != None:
-                print(f"Non-block string '{content[nonblock_char_startidx:column_no]}' at line {line_no} column {nonblock_char_startidx} but no block '{BAR_OPEN}' or '{SETTING_OPEN} was opened.")
+                print(f"Non-block string '{line[nonblock_char_startidx:column_no]}' at line {line_no} column {nonblock_char_startidx} but no block '{BAR_OPEN}' or '{SETTING_OPEN} was opened.")
                 errors_count += 1
                 nonblock_char_startidx = None
 
@@ -48,7 +49,7 @@ def validate_block_enclosures(content: str):
                     print(f"Bar '{BAR_OPEN}' is still opened at line {line_no} column {bar_opened_idx} but '{char}' was found at line {line_no} column {column_no}.")
                     errors_count += 1
                 else:
-                    current_bar = content[bar_opened_idx:column_no + 1]
+                    current_bar = line[bar_opened_idx:column_no + 1]
                     content_within = current_bar[1:-1].strip()
                     if content_within == '':
                         print(f"Empty bar '{current_bar}' at line at line {line_no} column {bar_opened_idx}.")
@@ -61,7 +62,7 @@ def validate_block_enclosures(content: str):
                     print(f"Setting block '{SETTING_OPEN}' is still opened at line {line_no} column {setting_opened_idx} but '{char}' was found at line {line_no} column {column_no}.")
                     errors_count += 1
                 else:
-                    current_setting_block = content[setting_opened_idx:column_no + 1]
+                    current_setting_block = line[setting_opened_idx:column_no + 1]
                     content_within = current_setting_block[1:-1].strip()
                     if content_within == '':
                         print(f"Empty setting block '{current_setting_block}'at line {line_no} column {setting_opened_idx}.")
@@ -76,7 +77,7 @@ def validate_block_enclosures(content: str):
             errors_count += 1
 
         if nonblock_char_startidx != None:
-            print(f"Non-block string '{content[nonblock_char_startidx:]}' at line {line_no} column {nonblock_char_startidx} but no block '{BAR_OPEN}' or '{SETTING_OPEN} was opened.")
+            print(f"Non-block string '{line[nonblock_char_startidx:]}' at line {line_no} column {nonblock_char_startidx} but no block '{BAR_OPEN}' or '{SETTING_OPEN} was opened.")
             errors_count += 1
 
 

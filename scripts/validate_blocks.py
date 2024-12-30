@@ -1,4 +1,4 @@
-from constants.notes import NOTE_SEP, TUPLET_CLOSE, BREAK_SYM
+from constants.notes import  BREAK_SYM, NOTE_SEP, TUPLET_CLOSE
 from constants.setting_fields import FIELD_SEP
 from validate_bar_content import *
 from validate_setting_content import validate_setting_field
