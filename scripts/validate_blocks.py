@@ -1,27 +1,27 @@
-from constants.notes import  BREAK_SYM, NOTE_SEP, TUPLET_CLOSE
+from constants.notes import  BREAK_SYM, ELEMENT_SEP, TUPLET_CLOSE
 from constants.setting_fields import FIELD_SEP
 from validate_bar_content import *
 from validate_setting_content import validate_setting_field
 
 def validate_bar(bar: str):
     content = bar[1:-1] # Extract content
-    notes = content.split(NOTE_SEP)
+    elements = content.split(ELEMENT_SEP)
 
-    for note in notes:
+    for element in elements:
         # Empty note
-        if note == '':
+        if element == '':
             return False
         # Tuplets
-        elif note[-1] == TUPLET_CLOSE:
-            if validate_tuplet(note) == False:
+        elif element[-1] == TUPLET_CLOSE:
+            if validate_tuplet(element) == False:
                 return False
         # Breaks
-        elif note[0] == BREAK_SYM:
-            if validate_break_structure(note) == False:
+        elif element[0] == BREAK_SYM:
+            if validate_break_structure(element) == False:
                 return False
         # Notes
         else:
-            if validate_note_structure(note) == False:
+            if validate_note_structure(element) == False:
                 return False
 
     return True
