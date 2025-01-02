@@ -1,12 +1,12 @@
 from constants.notes import *
 
 def validate_note_structure(note_structure: str):
-    splitted = note_structure.split(NOTESTRUCT_SEP)
+    parts = note_structure.split(NOTESTRUCT_SEP)
 
-    if not len(splitted) in VALID_NOTESTRUCT_LENS:
+    if not len(parts) in VALID_NOTESTRUCT_LENS:
         return False
 
-    note, duration = splitted[:NOTESTRUCT_EXPLEN_SHORT]
+    note, duration = parts[:NOTESTRUCT_EXPLEN_SHORT]
 
     # Check accidental
     if len(note) == NOTESTRUCT_EXPLEN_LONG:
@@ -30,23 +30,23 @@ def validate_note_structure(note_structure: str):
         return False
 
     # No additionals
-    if len(splitted) == NOTESTRUCT_EXPLEN_SHORT:
+    if len(parts) == NOTESTRUCT_EXPLEN_SHORT:
         return True
 
     # Check additionals
-    additionals = splitted[NOTESTRUCT_IDX_ADDITIONALS]
+    additionals = parts[NOTESTRUCT_IDX_ADDITIONALS]
     all_additionals_unique = len(set(additionals)) == len(additionals)
     all_additionals_valid = all(additional in VALID_ADDITIONALS for additional in additionals)
     no_slur_overlap = not (ADDITIONAL_SLUR_BEGIN in additionals and ADDITIONAL_SLUR_END in additionals)
     return all_additionals_unique and all_additionals_valid and no_slur_overlap
 
 def validate_break_structure(break_structure: str):
-    splitted = break_structure.split(BREAKSTRUCT_SEP)
+    parts = break_structure.split(BREAKSTRUCT_SEP)
 
-    if len(splitted) != BREAKSTRUCT_EXPLEN:
+    if len(parts) != BREAKSTRUCT_EXPLEN:
         return False
 
-    break_char, duration = splitted
+    break_char, duration = parts
 
     is_valid_break = break_char == BREAK_SYM
     is_valid_duration = duration.isnumeric() and int(duration) in VALID_DURATIONS
@@ -61,16 +61,16 @@ def validate_tuplet(tuplet: str):
         return False
 
     # Validating tuplet definition
-    tuplet_defs = tuplet[:tuplet_open_idx]
-    def_splitted = tuplet_defs.split(TUPLET_SEP_DEF)
+    tuplet_definition = tuplet[:tuplet_open_idx]
+    definition_parts = tuplet_definition.split(TUPLET_SEP_DEF)
 
-    if len(def_splitted) != TUPLET_EXPDEFS:
+    if len(definition_parts) != TUPLET_EXPDEFS:
         return False
 
-    if not all(tuplet_def.isnumeric() for tuplet_def in def_splitted):
+    if not all(definition.isnumeric() for definition in definition_parts):
         return False
 
-    grouping, no_regular_notes, regular_duration = def_splitted
+    grouping, no_regular_notes, regular_duration = definition_parts
     if not int(regular_duration) in VALID_DURATIONS:
         return False
 
