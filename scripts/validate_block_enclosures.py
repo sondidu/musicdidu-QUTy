@@ -83,4 +83,4 @@ def validate_block_enclosures(file: IO):
 
     if errors_count == 0:
         print('No errors found.')
-    return errors_count
+    return errors_count == 0
