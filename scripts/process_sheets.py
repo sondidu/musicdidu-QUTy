@@ -1,8 +1,6 @@
+from validate_beats import validate_beats
 from validate_block_enclosures import validate_block_enclosures
-from validate_blocks import validate_bar, validate_setting_block
-from validate_beats import validate_bar_beats
-from constants.block_enclosures import BAR_OPEN, BAR_CLOSE, SETTING_OPEN, SETTING_CLOSE
-from constants.setting_fields import FIELD_TIMESIG, FIELD_SEP_TIMESIG, FIELD_SEP, FIELD_SEP_VAL
+from validate_blocks import validate_blocks
 import os
 import sys
 
@@ -48,77 +46,17 @@ for filename in os.listdir(sheets_dir):
 
         # Validate element syntax
         print("Validating element syntax...")
-        element_syntax_check = True
-        for line_no, line in enumerate(file, start=1):
-            last_open_idx = None
-            block_no = 0
-            for column_no, char in enumerate(line):
-                if char == BAR_OPEN or char == SETTING_OPEN:
-                    last_open_idx = column_no
-                elif char == BAR_CLOSE or char == SETTING_CLOSE:
-                    # Extract block
-                    block = line[last_open_idx:column_no + 1]
-
-                    block_no += 1
-                    block_check = False
-
-                    # Validate block
-                    if line[last_open_idx] == BAR_OPEN:
-                        block_check = validate_bar(block)
-                    else:
-                        block_check = validate_setting_block(block)
-
-                    if block_check == False:
-                        print(f"Error at line {line_no} block no. {block_no} '{block}'.")
-                        element_syntax_check = False
-                    last_open_idx = None
-
+        element_syntax_check = validate_blocks(file)
         if element_syntax_check == False:
             print("Some errors in element syntax.")
             continue
         else:
             print("No errors in element syntax.")
 
-        file.seek(0) # Because previously iterated entire file
+        file.seek(0) # Because previously `validate_blocks` iterates the entire file
 
         # Validating beats
-        overall_beats_check = True
-        curr_tsig_top = None
-        curr_tsig_bottom = None
-        for line_no, line in enumerate(file, start=1):
-            last_open_idx = None
-            block_no = 0
-            for column_no, char in enumerate(line):
-                if char == BAR_OPEN or char == SETTING_OPEN:
-                    last_open_idx = column_no
-                elif char == BAR_CLOSE or char == SETTING_CLOSE:
-                    # Extract block
-                    block = line[last_open_idx:column_no + 1]
-
-                    block_no += 1
-
-                    if line[last_open_idx] == SETTING_OPEN:
-                        # Madness, will comment or make better later
-                        if FIELD_TIMESIG in block:
-                            field_tsig_idx_start = block.find(FIELD_TIMESIG)
-                            next_sep = block[field_tsig_idx_start:].find(FIELD_SEP)
-                            field_tsig_str = block[field_tsig_idx_start:-1].strip()
-                            if next_sep != -1:
-                                field_tsig_str = block[field_tsig_idx_start:next_sep]
-                            tsig_top_str, tsig_bottom_str = field_tsig_str[field_tsig_str.find(FIELD_SEP_VAL) + 1:].split(FIELD_SEP_TIMESIG)
-                            curr_tsig_top, curr_tsig_bottom = int(tsig_top_str), int(tsig_bottom_str)
-                    else:
-                        if curr_tsig_top == None or curr_tsig_bottom == None:
-                            print("Time signature was never set.")
-                            continue
-
-                        beats_check = validate_bar_beats(block, curr_tsig_top, curr_tsig_bottom)
-                        if beats_check == False:
-                            print(f"Unmatch beats at line {line_no} block no. {block_no} '{block}'.")
-                            overall_beats_check = False
-
-                    last_open_idx = None
-
+        overall_beats_check = validate_beats(file)
         if overall_beats_check == False:
             print("Not all bars have correct beats.")
             continue
