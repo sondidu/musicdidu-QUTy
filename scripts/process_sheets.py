@@ -41,25 +41,26 @@ for filename in os.listdir(sheets_dir):
         print("Validating block enclosures...")
         try:
             validate_block_enclosures(file)
-            print('No errors found.')
-        except InvalidSheet as error:
-            print(error)
+            print("\tNo errors regarding block enclosures.")
+        except InvalidSheet as enclosure_error:
+            print(enclosure_error)
             print()
             continue
 
         file.seek(0) # Because `validate_block_enclosures` iterates the entire file
-        continue
 
         # Validate element syntax
         print("Validating element syntax...")
-        element_syntax_check = validate_blocks(file)
-        if element_syntax_check == False:
-            print("Some errors in element syntax.")
+        try:
+            validate_blocks(file)
+            print("\tNo errors regarding element syntax.")
+        except InvalidSheet as element_syntax_error:
+            print(element_syntax_error)
+            print()
             continue
-        else:
-            print("No errors in element syntax.")
 
-        file.seek(0) # Because previously `validate_blocks` iterates the entire file
+        file.seek(0) # Because `validate_blocks` iterates the entire file
+        continue
 
         # Validating beats
         overall_beats_check = validate_beats(file)

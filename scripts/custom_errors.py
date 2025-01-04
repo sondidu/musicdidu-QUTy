@@ -2,14 +2,15 @@
 class InvalidSheet(Exception):
     """When a sheet is invalid."""
 
-    def __init__(self, msg):
-        self.msg = msg
+    def __init__(self, errors_count, regarding):
+        self.errors_count = errors_count
+        self.regarding = regarding
         super().__init__()
 
     def __str__(self):
-        return self.msg
+        return f"There are {self.errors_count} errors regarding {self.regarding}."
 
-class BlockError(Exception):
+class BlockEnclosureError(Exception):
     """Error regarding block notation."""
 
     def __init__(self, msg, line_no, column_no):
@@ -25,16 +26,13 @@ class BlockError(Exception):
 class ElementError(Exception):
     """Error regarding element notation."""
 
-    def __init__(self, element, line_no, column_no, block_no):
+    def __init__(self, element):
         self.element = element
-        self.line_no = line_no
-        self.column_no = column_no
-        self.block_no = block_no
 
         super().__init__()
 
     def __str__(self):
-        return f"Invalid element '{self.element}' at line {self.line_no} column {self.column_no} block {self.block_no}."
+        return f'Invalid element "{self.element}"'
 
 class BeatError(Exception):
     """Error regarding beat count."""
