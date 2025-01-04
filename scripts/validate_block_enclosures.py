@@ -1,3 +1,4 @@
+from custom_errors import BlockError, InvalidSheet
 from constants.block_enclosures import *
 from typing import IO
 
@@ -8,79 +9,73 @@ def validate_block_enclosures(file: IO):
     errors_count = 0
 
     for line_no, line in enumerate(file, start=1):
+        line = line[:-1] # Remove '\n' at the very end
+
         bar_opened_idx = None
         setting_opened_idx = None
-        nonblock_char_startidx = None
 
-        for column_no, char in enumerate(line):
-            # Skip non-block chars
-            if not char in block_chars:
+        try:
+            for column_no, char in enumerate(line):
+                # Skip non-block chars
+                if not char in block_chars:
 
-                # Mark non-block char if no block has been opened, ignore if whitespace
-                if nonblock_char_startidx == \
-                    bar_opened_idx == \
-                    setting_opened_idx == None \
-                    and not char.isspace():
-                    nonblock_char_startidx = column_no
+                    # Mark non-block char if no block has been opened, ignore if whitespace
+                    if bar_opened_idx == setting_opened_idx == None and not char.isspace():
 
-                continue
+                        # Find next non-block char
+                        next_nonblock_idx = len(line)
+                        for block_char_no, block_char in enumerate(line[column_no:]):
+                            if block_char in block_chars:
+                                next_nonblock_idx = block_char_no
+                                break
 
-            if nonblock_char_startidx != None:
-                print(f"Non-block string '{line[nonblock_char_startidx:column_no]}' at line {line_no} column {nonblock_char_startidx} but no block '{BAR_OPEN}' or '{SETTING_OPEN} was opened.")
-                errors_count += 1
-                nonblock_char_startidx = None
+                        nonblock_str = line[column_no:next_nonblock_idx]
+                        raise BlockError(f"Non-block string '{nonblock_str}'", line_no, column_no)
 
-            if bar_opened_idx == None and setting_opened_idx == None:
-                if char == BAR_OPEN:
-                    bar_opened_idx = column_no
-                if char == BAR_CLOSE:
-                    print(f"Bar was closed '{BAR_CLOSE}' but was never opened at line {line_no} column {column_no}.")
-                    errors_count += 1
+                    continue
 
-                if char == SETTING_OPEN:
-                    setting_opened_idx = column_no
-                if char == SETTING_CLOSE:
-                    print(f"Setting block was closed '{SETTING_CLOSE}' but never opened at line {line_no} column {column_no}.")
-                    errors_count += 1
+                if bar_opened_idx == None and setting_opened_idx == None:
+                    if char == BAR_OPEN:
+                        bar_opened_idx = column_no
+                    if char == BAR_CLOSE:
+                        raise BlockError(f"Bar was closed '{BAR_CLOSE}' but was never opened,", line_no, column_no)
 
-            elif bar_opened_idx != None:
-                unallowed_chars = block_chars - {BAR_CLOSE}
-                if char in unallowed_chars:
-                    print(f"Bar '{BAR_OPEN}' is still opened at line {line_no} column {bar_opened_idx} but '{char}' was found at line {line_no} column {column_no}.")
-                    errors_count += 1
-                else:
-                    current_bar = line[bar_opened_idx:column_no + 1]
-                    content_within = current_bar[1:-1].strip()
-                    if content_within == '':
-                        print(f"Empty bar '{current_bar}' at line at line {line_no} column {bar_opened_idx}.")
-                        errors_count += 1
-                    bar_opened_idx = None # Bar closed
+                    if char == SETTING_OPEN:
+                        setting_opened_idx = column_no
+                    if char == SETTING_CLOSE:
+                        raise BlockError(f"Setting block was closed '{SETTING_CLOSE}' but was never opened,", line_no, column_no)
 
-            elif setting_opened_idx != None:
-                unallowed_chars = block_chars - {SETTING_CLOSE}
-                if char in unallowed_chars:
-                    print(f"Setting block '{SETTING_OPEN}' is still opened at line {line_no} column {setting_opened_idx} but '{char}' was found at line {line_no} column {column_no}.")
-                    errors_count += 1
-                else:
-                    current_setting_block = line[setting_opened_idx:column_no + 1]
-                    content_within = current_setting_block[1:-1].strip()
-                    if content_within == '':
-                        print(f"Empty setting block '{current_setting_block}'at line {line_no} column {setting_opened_idx}.")
-                        errors_count += 1
-                    setting_opened_idx = None # Setting closed
+                elif bar_opened_idx != None:
+                    unallowed_chars = block_chars - {BAR_CLOSE}
+                    if char in unallowed_chars:
+                        raise BlockError(f"Bar '{BAR_OPEN}' is still opened at column {bar_opened_idx} but '{char}' was found,", line_no, column_no)
+                    else:
+                        current_bar = line[bar_opened_idx:column_no + 1]
+                        content_within = current_bar[1:-1].strip()
+                        if content_within == '':
+                            raise BlockError(f"Empty bar '{current_bar}'", line_no, bar_opened_idx)
+                        bar_opened_idx = None # Bar closed
 
-        if bar_opened_idx != None:
-            print(f"Bar was opened '{BAR_OPEN}' at line {line_no} column {bar_opened_idx} but never closed '{BAR_CLOSE}'.")
+                elif setting_opened_idx != None:
+                    unallowed_chars = block_chars - {SETTING_CLOSE}
+                    if char in unallowed_chars:
+                        raise BlockError(f"Setting block '{SETTING_OPEN}' is still opened at column {setting_opened_idx} but '{char}' was found,", line_no, column_no)
+                    else:
+                        current_setting_block = line[setting_opened_idx:column_no + 1]
+                        content_within = current_setting_block[1:-1].strip()
+                        if content_within == '':
+                            raise BlockError(f"Empty setting block '{current_setting_block}'", line_no, setting_opened_idx)
+                        setting_opened_idx = None # Setting closed
+
+            if bar_opened_idx != None:
+                raise BlockError(f"Bar was opened '{BAR_OPEN}' at column {bar_opened_idx} but never closed '{BAR_CLOSE}'.", line_no, len(line))
+            if setting_opened_idx != None:
+                raise BlockError(f"Setting block was opened '{SETTING_OPEN}' at column {setting_opened_idx} but never closed '{BAR_CLOSE}'.", line_no, len(line))
+
+        except BlockError as error:
             errors_count += 1
-        if setting_opened_idx != None:
-            print(f"Setting block was opened '{SETTING_OPEN}' at line {line_no} column {setting_opened_idx} but never closed '{SETTING_CLOSE}'.")
-            errors_count += 1
-
-        if nonblock_char_startidx != None:
-            print(f"Non-block string '{line[nonblock_char_startidx:]}' at line {line_no} column {nonblock_char_startidx} but no block '{BAR_OPEN}' or '{SETTING_OPEN} was opened.")
-            errors_count += 1
+            print(error)
 
 
-    if errors_count == 0:
-        print('No errors found.')
-    return errors_count == 0
+    if errors_count != 0:
+        raise InvalidSheet(f"There are {errors_count} errors regarding block enclosures.")

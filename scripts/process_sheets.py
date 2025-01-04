@@ -1,3 +1,4 @@
+from custom_errors import InvalidSheet
 from validate_beats import validate_beats
 from validate_block_enclosures import validate_block_enclosures
 from validate_blocks import validate_blocks
@@ -38,11 +39,16 @@ for filename in os.listdir(sheets_dir):
         # Validate Enclosures
         print(f"Validating {filename}")
         print("Validating block enclosures...")
-        block_enclosure_check = validate_block_enclosures(file)
-        if block_enclosure_check == False:
+        try:
+            validate_block_enclosures(file)
+            print('No errors found.')
+        except InvalidSheet as error:
+            print(error)
+            print()
             continue
 
         file.seek(0) # Because `validate_block_enclosures` iterates the entire file
+        continue
 
         # Validate element syntax
         print("Validating element syntax...")
