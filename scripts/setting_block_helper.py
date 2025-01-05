@@ -1,4 +1,3 @@
-# consider renaming to setting_helpers
 from constants.setting_fields import *
 from custom_errors import FieldError
 

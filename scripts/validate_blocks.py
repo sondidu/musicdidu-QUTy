@@ -3,8 +3,8 @@ from constants.notes import  BREAK_SYM, ELEMENT_SEP, TUPLET_CLOSE
 from constants.setting_fields import KEY_BPM, KEY_TIMESIG, SEP_FIELD
 from custom_errors import BeatError, BlockEnclosureError, FieldError, InvalidSheet
 from typing import IO
-from validate_bar_content import *
-from validate_setting_content import field_to_key_val
+from scripts.bar_helper import *
+from scripts.setting_block_helper import field_to_key_val
 
 def validate_bar(bar: str, tsig_top, tsig_bottom):
     content = bar.strip(BAR_OPEN + BAR_CLOSE)

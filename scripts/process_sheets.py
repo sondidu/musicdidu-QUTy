@@ -1,5 +1,4 @@
 from custom_errors import InvalidSheet
-from validate_beats import validate_beats
 from validate_block_enclosures import validate_block_enclosures
 from validate_blocks import validate_blocks
 import os
@@ -58,18 +57,6 @@ for filename in os.listdir(sheets_dir):
             print(block_content)
             print()
             continue
-        # add an except BlockError, refer to validate_blocks.py on why
-
-        file.seek(0) # Because `validate_blocks` iterates the entire file
-        continue
-
-        # Validating beats
-        overall_beats_check = validate_beats(file)
-        if overall_beats_check == False:
-            print("Not all bars have correct beats.")
-            continue
-        else:
-            print("All bars have correct beats.")
 
 
 c_file_content += 'const FlashFile available_files[] = {\n'

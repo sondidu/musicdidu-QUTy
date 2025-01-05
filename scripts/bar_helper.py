@@ -1,4 +1,3 @@
-# consider renaming the file to bar_elements.py or something, but include 'element', maybe element_helpers?
 from constants.notes import *
 from custom_errors import BeatError, ElementError
 
@@ -128,9 +127,3 @@ def validate_bar_beats(actual_beat_count, tsig_top, tsig_bottom):
 
     if actual_beat_count != expected_beat_count:
         raise BeatError(expected_beat_count, actual_beat_count)
-
-# validate_note_structure -> get_note_element_beats
-# validate_break_structure -> get_break_element_beats
-# validate_tuplet -> get_tuplet_beats, now also checks the count of each note element in the tuplet
-
-# Each still only raises ElementError
