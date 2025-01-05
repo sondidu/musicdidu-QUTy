@@ -3,10 +3,10 @@ from constants.notes import  BREAK_SYM, ELEMENT_SEP, TUPLET_CLOSE
 from constants.setting_fields import KEY_BPM, KEY_TIMESIG, SEP_FIELD
 from custom_errors import BeatError, BlockEnclosureError, FieldError, InvalidSheet
 from typing import IO
-from scripts.bar_helper import *
-from scripts.setting_block_helper import field_to_key_val
+from bar_helper import *
+from setting_block_helper import field_to_key_val
 
-def validate_bar(bar: str, tsig_top, tsig_bottom):
+def validate_bar(bar: str, tsig_top: int, tsig_bottom: int, is_in_slur: bool):
     content = bar.strip(BAR_OPEN + BAR_CLOSE)
     elements = content.split(ELEMENT_SEP)
 
@@ -19,13 +19,15 @@ def validate_bar(bar: str, tsig_top, tsig_bottom):
                 raise ElementError(element)
             # Tuplets
             elif element[-1] == TUPLET_CLOSE:
-                beat_count += get_tuplet_beats(element)
+                beats_obtained, is_in_slur = get_tuplet_beats(element, is_in_slur)
+                beat_count += beats_obtained
             # Breaks
             elif element[0] == BREAK_SYM:
                 beat_count += get_break_beats(element)
             # Notes
             else:
-                beat_count += get_note_beats(element)
+                beats_obtained, is_in_slur = get_note_beats(element, is_in_slur)
+                beat_count += beats_obtained
         except ElementError as error:
             errors.append(error)
 
@@ -37,7 +39,7 @@ def validate_bar(bar: str, tsig_top, tsig_bottom):
     except BeatError as error:
         errors.append(error)
 
-    return errors
+    return is_in_slur
 
 def setting_block_to_dict(setting_block: str):
     content = setting_block.strip(SETTING_OPEN + SETTING_CLOSE)
@@ -66,6 +68,7 @@ def validate_blocks(file: IO):
     tsig_top = None
     tsig_bottom = None
     bpm = None
+    is_in_slur = False
     for line_no, line in enumerate(file, start=1):
         last_open_idx = None
         block_no = 0
@@ -83,7 +86,12 @@ def validate_blocks(file: IO):
                 try:
                     if line[last_open_idx] == BAR_OPEN and char == BAR_CLOSE:
                         if bpm is not None:
-                            errors = validate_bar(block, tsig_top, tsig_bottom)
+                            errors_or_new_slur_state = validate_bar(block, tsig_top, tsig_bottom, is_in_slur)
+                            if type(errors_or_new_slur_state) == bool:
+                                is_in_slur = errors_or_new_slur_state
+                            else: # List contain errors
+                                errors = errors_or_new_slur_state
+                                errors.append("Fix all errors before beat count is checked.")
                         else:
                             raise BeatError(msg="BPM was never set.")
                     elif line[last_open_idx] == SETTING_OPEN and char == SETTING_CLOSE:

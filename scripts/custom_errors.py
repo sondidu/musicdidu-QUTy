@@ -26,13 +26,17 @@ class BlockEnclosureError(Exception):
 class ElementError(Exception):
     """Error regarding element notation."""
 
-    def __init__(self, element):
+    def __init__(self, element, msg=None):
         self.element = element
+        self.msg = msg
 
         super().__init__()
 
     def __str__(self):
-        return f'Invalid element "{self.element}"'
+        constructed_msg = f'Invalid element "{self.element}"'
+        if self.msg is not None:
+            constructed_msg += ' ' + self.msg
+        return constructed_msg + '.'
 
 class FieldError(Exception):
     """Error regarding fields."""
@@ -47,7 +51,7 @@ class FieldError(Exception):
         constructed_msg = f'Invalid field "{self.field}"'
         if self.msg is not None:
             constructed_msg += ' ' + self.msg
-        return constructed_msg
+        return constructed_msg + '.'
 
 class BeatError(Exception):
     """Error regarding beat count."""
