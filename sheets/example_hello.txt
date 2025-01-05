@@ -1,4 +1,7 @@
-{BPM=120,tsig=4/4}
-{skipbars=1, anacrusis=True}
+{ BPM=135, tsig=4/4, anacrusis=True, skipbars=2}
 [A4-4 A4-4 A4-4 A4-4]
 [B4-4 B4-4 B4-8 B4-8 C4-4-s]
+
+[G5-8-. F#5-16-< F#5-8-> G5-8-< G5-2->]
+[G5-8-. F#5-16-< F#5-8-> G5-8-< G5-4-> *-8 B4-8]
+[G5-8-. F#5-16-< F#5-8-> E5-8-< E5-4->. D5-8-<]

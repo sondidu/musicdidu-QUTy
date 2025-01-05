@@ -52,25 +52,14 @@ class FieldError(Exception):
 class BeatError(Exception):
     """Error regarding beat count."""
 
-    def __init__(self, bar, line_no, column_no, block_no, tsig_top, tsig_bottom, actual_beats):
-        self.bar = bar
-        self.line_no = line_no
-        self.column_no = column_no
-        self.block_no = block_no
-
-        duration_to_32nd = {
-            1 : 32,
-            2 : 16,
-            4 : 8,
-            8 : 4,
-            16 : 2,
-            32 : 1
-        }
-
-        self.expected_beats_32nd = tsig_top * duration_to_32nd[tsig_bottom]
+    def __init__(self, expected_beats=None, actual_beats=None, msg=None):
+        self.expected_beats = expected_beats
         self.actual_beats = actual_beats
+        self.msg = msg
 
         super().__init__()
 
     def __str__(self):
-        return f"Expected {self.expected_beats_32nd} beats (in 32nds) but got {self.actual_beats} instead, at line {self.line_no} column {self.column_no} block {self.block_no}."
+        if self.expected_beats is not None and self.actual_beats is not None:
+            return f"Expected {self.expected_beats} beats (in 32nds) but got {self.actual_beats} instead."
+        return self.msg

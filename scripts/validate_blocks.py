@@ -1,15 +1,17 @@
 from constants.block_enclosures import BAR_CLOSE, BAR_OPEN, SETTING_CLOSE, SETTING_OPEN
 from constants.notes import  BREAK_SYM, ELEMENT_SEP, TUPLET_CLOSE
-from custom_errors import FieldError, InvalidSheet
+from constants.setting_fields import KEY_BPM, KEY_TIMESIG, SEP_FIELD
+from custom_errors import BeatError, BlockEnclosureError, FieldError, InvalidSheet
 from typing import IO
 from validate_bar_content import *
-from validate_setting_content import validate_key_val, fields_to_dict
+from validate_setting_content import field_to_key_val
 
-def validate_bar(bar: str):
-    content = bar[1:-1] # Extract content
+def validate_bar(bar: str, tsig_top, tsig_bottom):
+    content = bar.strip(BAR_OPEN + BAR_CLOSE)
     elements = content.split(ELEMENT_SEP)
 
-    invalid_elements = []
+    beat_count = 0
+    errors = []
     for element in elements:
         try:
             # Empty note
@@ -17,39 +19,53 @@ def validate_bar(bar: str):
                 raise ElementError(element)
             # Tuplets
             elif element[-1] == TUPLET_CLOSE:
-                validate_tuplet(element)
+                beat_count += get_tuplet_beats(element)
             # Breaks
             elif element[0] == BREAK_SYM:
-                validate_break_structure(element)
+                beat_count += get_break_beats(element)
             # Notes
             else:
-                validate_note_structure(element)
+                beat_count += get_note_beats(element)
         except ElementError as error:
-            invalid_elements.append(error)
+            errors.append(error)
 
-    return invalid_elements
-
-def validate_setting_block(setting_block: str):
-    content = setting_block.strip(SETTING_OPEN + SETTING_CLOSE)
+    if len(errors) != 0:
+        return errors
 
     try:
-        settings_dict = fields_to_dict(content)
-    except FieldError:
-        print("Failed to convert setting fields to dictionary.")
-        return
+        validate_bar_beats(beat_count, tsig_top, tsig_bottom)
+    except BeatError as error:
+        errors.append(error)
 
+    return errors
+
+def setting_block_to_dict(setting_block: str):
+    content = setting_block.strip(SETTING_OPEN + SETTING_CLOSE)
+
+    fields = content.split(SEP_FIELD)
+    fields = [field.strip() for field in fields]
+
+    settings_dict = dict()
     invalid_fields = []
-    for key, val in settings_dict.items():
+    for field in fields:
         try:
-            validate_key_val(key, val)
+            key, val = field_to_key_val(field)
+            if key in settings_dict:
+                raise FieldError(field, f"Multiple instances of key '{key}'")
+            settings_dict[key] = val
         except FieldError as error:
             invalid_fields.append(error)
 
-    return invalid_fields
+    if len(invalid_fields) != 0:
+        return invalid_fields
+
+    return settings_dict
 
 def validate_blocks(file: IO):
     errors_count = 0
-    # TODO: Ensure that BPM and TIMESIG are already set before checking bars
+    tsig_top = None
+    tsig_bottom = None
+    bpm = None
     for line_no, line in enumerate(file, start=1):
         last_open_idx = None
         block_no = 0
@@ -64,10 +80,26 @@ def validate_blocks(file: IO):
 
                 # Validate block
                 errors = []
-                if line[last_open_idx] == BAR_OPEN:
-                    errors = validate_bar(block)
-                else:
-                    errors = validate_setting_block(block)
+                try:
+                    if line[last_open_idx] == BAR_OPEN and char == BAR_CLOSE:
+                        if bpm is not None:
+                            errors = validate_bar(block, tsig_top, tsig_bottom)
+                        else:
+                            raise BeatError(msg="BPM was never set.")
+                    elif line[last_open_idx] == SETTING_OPEN and char == SETTING_CLOSE:
+                        errors_or_settings_dict = setting_block_to_dict(block)
+
+                        if type(errors_or_settings_dict) == dict:
+                            if KEY_TIMESIG in errors_or_settings_dict:
+                                tsig_top, tsig_bottom = errors_or_settings_dict[KEY_TIMESIG]
+                            if KEY_BPM in errors_or_settings_dict:
+                                bpm = errors_or_settings_dict[KEY_BPM]
+                        else: # List contain errors
+                            errors = errors_or_settings_dict
+                    else:
+                        raise BlockEnclosureError("Block enclosure error. THIS SHOULD NEVER HAPPEN", line_no, column_no)
+                except Exception as error:
+                    errors.append(error)
 
                 if len(errors) != 0:
                     errors_count += len(errors)

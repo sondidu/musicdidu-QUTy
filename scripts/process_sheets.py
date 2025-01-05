@@ -58,6 +58,7 @@ for filename in os.listdir(sheets_dir):
             print(block_content)
             print()
             continue
+        # add an except BlockError, refer to validate_blocks.py on why
 
         file.seek(0) # Because `validate_blocks` iterates the entire file
         continue
