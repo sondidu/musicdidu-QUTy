@@ -1,3 +1,4 @@
 {BPM=120,tsig=4/4}
+{skipbars=1, anacrusis=True}
 [A4-4 A4-4 A4-4 A4-4]
 [B4-4 B4-4 B4-8 B4-8 C4-4-s]

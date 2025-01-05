@@ -49,13 +49,13 @@ for filename in os.listdir(sheets_dir):
 
         file.seek(0) # Because `validate_block_enclosures` iterates the entire file
 
-        # Validate element syntax
-        print("Validating element syntax...")
+        # Validate block content
+        print("Validating block content...")
         try:
             validate_blocks(file)
-            print("\tNo errors regarding element syntax.")
-        except InvalidSheet as element_syntax_error:
-            print(element_syntax_error)
+            print("\tNo errors regarding block content.")
+        except InvalidSheet as block_content:
+            print(block_content)
             print()
             continue
 

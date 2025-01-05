@@ -21,7 +21,7 @@ class BlockEnclosureError(Exception):
         super().__init__()
 
     def __str__(self):
-        return f"\t{self.msg} at line {self.line_no} column {self.column_no}."
+        return f"{self.msg} at line {self.line_no} column {self.column_no}."
 
 class ElementError(Exception):
     """Error regarding element notation."""
@@ -33,6 +33,21 @@ class ElementError(Exception):
 
     def __str__(self):
         return f'Invalid element "{self.element}"'
+
+class FieldError(Exception):
+    """Error regarding fields."""
+
+    def __init__(self, field, msg=None):
+        self.field = field
+        self.msg = msg
+
+        super().__init__()
+
+    def __str__(self):
+        constructed_msg = f'Invalid field "{self.field}"'
+        if self.msg is not None:
+            constructed_msg += ' ' + self.msg
+        return constructed_msg
 
 class BeatError(Exception):
     """Error regarding beat count."""

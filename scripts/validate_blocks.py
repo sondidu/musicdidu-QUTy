@@ -1,10 +1,9 @@
 from constants.block_enclosures import BAR_CLOSE, BAR_OPEN, SETTING_CLOSE, SETTING_OPEN
 from constants.notes import  BREAK_SYM, ELEMENT_SEP, TUPLET_CLOSE
-from constants.setting_fields import FIELD_SEP
-from custom_errors import ElementError, InvalidSheet
+from custom_errors import FieldError, InvalidSheet
 from typing import IO
 from validate_bar_content import *
-from validate_setting_content import validate_setting_field
+from validate_setting_content import validate_key_val, fields_to_dict
 
 def validate_bar(bar: str):
     content = bar[1:-1] # Extract content
@@ -31,15 +30,22 @@ def validate_bar(bar: str):
     return invalid_elements
 
 def validate_setting_block(setting_block: str):
-    content = setting_block[1:-1] # Extract content
-    fields = content.split(FIELD_SEP)
+    content = setting_block.strip(SETTING_OPEN + SETTING_CLOSE)
 
-    for field in fields:
-        field_stripped = field.strip()
-        if validate_setting_field(field_stripped) == False:
-            return False
+    try:
+        settings_dict = fields_to_dict(content)
+    except FieldError:
+        print("Failed to convert setting fields to dictionary.")
+        return
 
-    return True
+    invalid_fields = []
+    for key, val in settings_dict.items():
+        try:
+            validate_key_val(key, val)
+        except FieldError as error:
+            invalid_fields.append(error)
+
+    return invalid_fields
 
 def validate_blocks(file: IO):
     errors_count = 0
@@ -57,16 +63,19 @@ def validate_blocks(file: IO):
                 block_no += 1
 
                 # Validate block
+                errors = []
                 if line[last_open_idx] == BAR_OPEN:
-                    invalid_elements = validate_bar(block)
-                    if len(invalid_elements) != 0:
-                        print(f"\t{block} at line {line_no} column {last_open_idx} block {block_no} errors:")
-                        for invalid_element in invalid_elements:
-                            print(f"\t\t{invalid_element}")
-
+                    errors = validate_bar(block)
                 else:
-                    validate_setting_block(block)
+                    errors = validate_setting_block(block)
+
+                if len(errors) != 0:
+                    errors_count += len(errors)
+                    print(f"\t{block} at line {line_no} column {last_open_idx} block {block_no} errors:")
+                    for error in errors:
+                        print(f"\t\t{error}")
+
                 last_open_idx = None
 
     if errors_count != 0:
-        raise InvalidSheet(errors_count, "element syntax")
+        raise InvalidSheet(errors_count, "block content")

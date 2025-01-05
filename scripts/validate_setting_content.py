@@ -1,27 +1,56 @@
 from constants.setting_fields import *
-from constants.notes import VALID_DURATIONS
+from custom_errors import FieldError
 
-def validate_setting_field(setting_field: str):
-    if setting_field.count(FIELD_SEP_VAL) != 1:
-        return False
+def validate_key_val(key: str, val: str):
+    field = f"{key}={val}"
+    incorrect_val_msg = f"{key}'s value is incorrect." # More detailed error messages in the future
+    if key == KEY_BPM:
+        if not val.isnumeric() or int(val) < BPM_MIN:
+            raise FieldError(field, incorrect_val_msg)
+    elif key == KEY_SKIPBARS:
+        if not val.isnumeric() or int(val) <= 0:
+            raise FieldError(field, incorrect_val_msg)
+    elif key == KEY_TIMESIG:
+        parts = val.split(SEP_VAL_TIMESIG)
+        if len(parts) != EXPLEN_TIMESIG:
+            raise FieldError(field, incorrect_val_msg)
 
-    field, value = setting_field.split(FIELD_SEP_VAL)
+        try:
+            tsig_top, tsig_bottom = parts
+        except:
+            raise FieldError(field, incorrect_val_msg)
 
-    if field == FIELD_BPM:
-        return value.isnumeric() and int(value) >= BPM_MIN
+        if not tsig_top.isnumeric() or int(tsig_top) <= 0:
+            raise FieldError(field, incorrect_val_msg)
 
-    elif field == FIELD_SKIPBARS:
-        return value.isnumeric() and int(value) > 0
+        if not tsig_bottom.isnumeric() or int(tsig_bottom) not in VALID_TIMESIG_BOTTOM_VALUES:
+            raise FieldError(field, incorrect_val_msg)
+    elif key == KEY_ANACRUSIS:
+        if val not in VALID_ANACRUSIS_VALUES:
+            raise FieldError(field, incorrect_val_msg)
+    else:
+        raise FieldError(field, f"Invalid key '{key}'.")
 
-    elif field == FIELD_TIMESIG:
-        if value.count(FIELD_SEP_TIMESIG) != 1:
-            return False
+def fields_to_dict(setting_fields: str):
+    fields = setting_fields.split(SEP_FIELD)
+    fields = [field.strip() for field in fields]
 
-        top, bottom = value.split(FIELD_SEP_TIMESIG)
+    result = dict()
 
-        is_top_valid = top.isnumeric() and int(top) > 0
-        is_bottom_valid = bottom.isnumeric() and int(bottom) in VALID_DURATIONS
+    for field in fields:
+        parts = field.split(SEP_KEYVAL)
 
-        return is_top_valid and is_bottom_valid
+        if len(parts) != EXPLEN_KEYVAL:
+            raise FieldError(field)
 
-    return False
+        try:
+            key, val = parts
+        except:
+            raise FieldError(field)
+
+        if key in result:
+            raise FieldError(field, f"The key '{key}' already exists.")
+
+        result[key] = val
+
+    return result

@@ -1,6 +1,6 @@
 from constants.block_enclosures import BAR_CLOSE, BAR_OPEN, SETTING_CLOSE, SETTING_OPEN
 from constants.notes import *
-from constants.setting_fields import FIELD_TIMESIG, FIELD_SEP_TIMESIG, FIELD_SEP, FIELD_SEP_VAL
+from constants.setting_fields import KEY_TIMESIG, SEP_VAL_TIMESIG, SEP_FIELD, SEP_KEYVAL
 from typing import IO
 
 duration_to_32nd = {
@@ -100,13 +100,13 @@ def validate_beats(file: IO):
 
                 if line[last_open_idx] == SETTING_OPEN:
                     # Madness, will comment or make better later
-                    if FIELD_TIMESIG in block:
-                        field_tsig_idx_start = block.find(FIELD_TIMESIG)
-                        next_sep = block[field_tsig_idx_start:].find(FIELD_SEP)
+                    if KEY_TIMESIG in block:
+                        field_tsig_idx_start = block.find(KEY_TIMESIG)
+                        next_sep = block[field_tsig_idx_start:].find(SEP_FIELD)
                         field_tsig_str = block[field_tsig_idx_start:-1].strip()
                         if next_sep != -1:
                             field_tsig_str = block[field_tsig_idx_start:next_sep]
-                        tsig_top_str, tsig_bottom_str = field_tsig_str[field_tsig_str.find(FIELD_SEP_VAL) + 1:].split(FIELD_SEP_TIMESIG)
+                        tsig_top_str, tsig_bottom_str = field_tsig_str[field_tsig_str.find(SEP_KEYVAL) + 1:].split(SEP_VAL_TIMESIG)
                         curr_tsig_top, curr_tsig_bottom = int(tsig_top_str), int(tsig_bottom_str)
                 else:
                     if curr_tsig_top == None or curr_tsig_bottom == None:
