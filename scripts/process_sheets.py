@@ -20,7 +20,7 @@ if (len(os.listdir(sheets_dir)) == 0):
 
 available_files = []
 
-print('\nPROCESSING ALL SHEETS')
+print('-' * 10 + '\nProcessing Sheets' + '-' * 10)
 for filename in os.listdir(sheets_dir):
     # Skip dirs and non-txt files
     if (os.path.isdir(filename) or not filename.endswith('.txt')):
@@ -33,22 +33,17 @@ for filename in os.listdir(sheets_dir):
     #     c_file_content += f'const char {var_name}_contents[] PROGMEM = "{contents}";\n'
     #     available_files.append((f'{var_name}_contents', var_name, f'sizeof({var_name}_contents)'))
 
-    # Validating sheets 2
     with open(os.path.join(sheets_dir, filename), 'r') as file:
-        print(f'Validating {filename}')
+        print(f'Validating {filename}...')
 
-        try:
-            errors_or_sheet_info = process_sheet(file)
-        except BlockEnclosureError as error:
-            print(error)
-            print("The sheet hasn't been entirely processed. Please fix this error first so the entire sheet can be processed.")
-            continue
+        errors_or_sheet_info = process_sheet(file)
 
         # Has errors
         if type(errors_or_sheet_info) == list:
-            print('The entire sheet has been processed but with errors.')
+            print(f'{filename} errors:')
             for error in errors_or_sheet_info:
-                print(error, end='\n\n')
+                print(error)
+                print()
             continue
 
         # No errors

@@ -18,7 +18,6 @@ def split_with_indices(s: str, sep=' '):
 
 def get_bar_info(bar: str, tsig_top: int, tsig_bottom: int, slur_state: bool, line_no: int, line_content: str, bar_start_idx: int):
     content = bar.strip(BAR_OPEN + BAR_CLOSE)
-    # elements = content.split(ELEMENT_SEP)
     elements = split_with_indices(content, ELEMENT_SEP)
 
     beat_count, element_count, note_count, break_count = 0, 0, 0, 0
@@ -67,21 +66,21 @@ def get_bar_info(bar: str, tsig_top: int, tsig_bottom: int, slur_state: bool, li
 
 def get_setting_info(setting_block: str, line_no: int, line_content: str, setting_start_idx: int):
     content = setting_block.strip(SETTING_OPEN + SETTING_CLOSE)
-
     fields = split_with_indices(content, SEP_FIELD)
 
     settings_dict = dict()
     errors = []
     for idx, field in fields:
-        field = field.strip()
+        field_stripped = field.strip()
         try:
-            key, val = field_to_key_val(field)
+            key, val = field_to_key_val(field_stripped)
             if key in settings_dict:
                 raise FieldError(field, f"Multiple instances of key '{key}'")
             settings_dict[key] = val
         except FieldError as error:
             first_line = f"{line_content} at line {line_no}\n"
-            pointer = (setting_start_idx + idx + 1) * ' ' + '^'
+            no_of_spaces = setting_start_idx + idx + len(field) - len(field_stripped) + 1 # Account the open enclosure and potential whitespaces in fields
+            pointer = no_of_spaces * ' ' + '^'
 
             constructed_msg = first_line + pointer + ' ' + str(error)
             errors.append(constructed_msg)
@@ -115,21 +114,31 @@ def process_sheet(file: TextIO):
         open_enclosure_idx = None
         line = line.strip('\n')
 
+        unknown_identifier_start_idx = None
         for char_idx, char in enumerate(line):
-            column_no = char_idx + 1
-
+            # Always ignore whitespace
             if char.isspace():
                 continue
 
             # Currently closed
             if open_enclosure_idx is None:
                 if char not in open_enclosure_pairs:
-                    raise BlockEnclosureError(f"Unknown identifier '{char}'", line_no, column_no, line)
+                    # Encounter char that's not unknown
+                    unknown_identifier_start_idx = char_idx if unknown_identifier_start_idx is None else unknown_identifier_start_idx
                 else:
+                    # Encounter char that's an opening enclosure '[' or '{'
                     open_enclosure_idx = char_idx
+
+                    # Have previously marked an unknown identifier
+                    if unknown_identifier_start_idx is not None:
+                        errors.append(BlockEnclosureError(f"Unknown identifier '{line[unknown_identifier_start_idx:char_idx]}'", line_no, unknown_identifier_start_idx, line))
+                        unknown_identifier_start_idx = None
+
                 continue
 
             # Currently open
+
+            # Checks for matching pair
             open_enclosure_char = line[open_enclosure_idx]
             if char != open_enclosure_pairs.get(open_enclosure_char):
                 continue
@@ -184,8 +193,12 @@ def process_sheet(file: TextIO):
 
             open_enclosure_idx = None # Prepare for next block
 
+        if unknown_identifier_start_idx is not None:
+            errors.append(BlockEnclosureError(f"Unknown identifier '{line[unknown_identifier_start_idx:]}'", line_no, unknown_identifier_start_idx, line))
+
+
         if open_enclosure_idx is not None:
-            raise BlockEnclosureError(f"Block was opened but never closed", line_no, open_enclosure_idx, line)
+            errors.append(BlockEnclosureError(f"Block was opened but never closed", line_no, open_enclosure_idx, line))
 
     if len(errors) != 0:
         return errors
