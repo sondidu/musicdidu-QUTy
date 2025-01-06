@@ -1,6 +1,5 @@
-from custom_errors import InvalidSheet
-from validate_block_enclosures import validate_block_enclosures
-from validate_blocks import validate_blocks
+from custom_errors import BlockEnclosureError
+from sheet_processor import process_sheet
 import os
 import sys
 
@@ -21,6 +20,7 @@ if (len(os.listdir(sheets_dir)) == 0):
 
 available_files = []
 
+print('\nPROCESSING ALL SHEETS')
 for filename in os.listdir(sheets_dir):
     # Skip dirs and non-txt files
     if (os.path.isdir(filename) or not filename.endswith('.txt')):
@@ -33,41 +33,46 @@ for filename in os.listdir(sheets_dir):
     #     c_file_content += f'const char {var_name}_contents[] PROGMEM = "{contents}";\n'
     #     available_files.append((f'{var_name}_contents', var_name, f'sizeof({var_name}_contents)'))
 
-    # Validating sheets
+    # Validating sheets 2
     with open(os.path.join(sheets_dir, filename), 'r') as file:
-        # Validate Enclosures
-        print(f"Validating {filename}")
-        print("Validating block enclosures...")
+        print(f'Validating {filename}')
+
         try:
-            validate_block_enclosures(file)
-            print("\tNo errors regarding block enclosures.")
-        except InvalidSheet as enclosure_error:
-            print(enclosure_error)
-            print()
+            errors_or_sheet_info = process_sheet(file)
+        except BlockEnclosureError as error:
+            print(error)
+            print("The sheet hasn't been entirely processed. Please fix this error first so the entire sheet can be processed.")
             continue
 
-        file.seek(0) # Because `validate_block_enclosures` iterates the entire file
-
-        # Validate block content
-        print("Validating block content...")
-        try:
-            validate_blocks(file)
-            print("\tNo errors regarding block content.")
-        except InvalidSheet as block_content:
-            print(block_content)
-            print()
+        # Has errors
+        if type(errors_or_sheet_info) == list:
+            print('The entire sheet has been processed but with errors.')
+            for error in errors_or_sheet_info:
+                print(error, end='\n\n')
             continue
 
+        # No errors
+        block_count, bar_count, setting_count, beat_count, \
+            element_count, note_count, break_count = errors_or_sheet_info
 
-c_file_content += 'const FlashFile available_files[] = {\n'
+        print(f"Validating {filename} is complete! Here are its info:")
+        print(f"- Block count: {block_count}")
+        print(f"- Bar count: {bar_count}")
+        print(f"- Setting Block count: {setting_count}")
+        print(f"- Total beats: {beat_count}")
+        print(f"- Total elements: {element_count}")
+        print(f"- Total notes: {note_count}")
+        print(f"- Total breaks: {break_count}")
 
-for var_name, base_name, size in available_files:
-    c_file_content += f'    {{{var_name}, "{base_name}", {size}}},\n'
+# c_file_content += 'const FlashFile available_files[] = {\n'
 
-c_file_content += '};\n'
-c_file_content += 'const uint8_t available_files_count = sizeof(available_files) / sizeof(FlashFile);\n'
+# for var_name, base_name, size in available_files:
+#     c_file_content += f'    {{{var_name}, "{base_name}", {size}}},\n'
 
-with open(output_file, 'w') as file:
-    file.write(c_file_content)
+# c_file_content += '};\n'
+# c_file_content += 'const uint8_t available_files_count = sizeof(available_files) / sizeof(FlashFile);\n'
 
-print(f'{output_file} generated successfully.')
+# with open(output_file, 'w') as file:
+#     file.write(c_file_content)
+
+# print(f'{output_file} generated successfully.')

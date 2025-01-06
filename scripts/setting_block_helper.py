@@ -8,7 +8,7 @@ def field_to_key_val(field: str):
         raise FieldError(field)
 
     key, val = field_parts
-    incorrect_val_msg = f"{key}'s value is incorrect." # More detailed error messages in the future
+    incorrect_val_msg = f"{key}'s value is incorrect" # More detailed error messages in the future
 
     if key == KEY_BPM:
         if not val.isnumeric() or int(val) < BPM_MIN:
@@ -39,6 +39,6 @@ def field_to_key_val(field: str):
         if val not in VALID_ANACRUSIS_VALUES:
             raise FieldError(field, incorrect_val_msg)
     else:
-        raise FieldError(field, f"Invalid key '{key}'.")
+        raise FieldError(field, f"Invalid key '{key}'")
 
     return key, val

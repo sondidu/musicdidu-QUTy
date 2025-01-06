@@ -13,15 +13,18 @@ class InvalidSheet(Exception):
 class BlockEnclosureError(Exception):
     """Error regarding block notation."""
 
-    def __init__(self, msg, line_no, column_no):
+    def __init__(self, msg, line_no, column_no, line_content):
         self.msg = msg
         self.line_no = line_no
         self.column_no = column_no
+        self.line_content = line_content
 
         super().__init__()
 
     def __str__(self):
-        return f"{self.msg} at line {self.line_no} column {self.column_no}."
+        first_line = f"{self.line_content} at line {self.line_no}\n"
+        pointer = ' ' * self.column_no + '^' + ' ' + self.msg
+        return f"{self.msg} at line {self.line_no}."
 
 class ElementError(Exception):
     """Error regarding element notation."""

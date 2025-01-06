@@ -10,7 +10,7 @@ duration_to_32nd = {
     32 : 1
 }
 
-def get_note_beats(note_element: str, is_in_slur: bool):
+def get_note_info(note_element: str, is_in_slur: bool):
     parts = note_element.split(NOTESTRUCT_SEP)
 
     if not len(parts) in VALID_NOTESTRUCT_LENS:
@@ -71,7 +71,7 @@ def get_note_beats(note_element: str, is_in_slur: bool):
 
     return duration_in_32nd, is_in_slur
 
-def get_break_beats(break_element: str):
+def get_break_info(break_element: str):
     parts = break_element.split(BREAKSTRUCT_SEP)
 
     if len(parts) != BREAKSTRUCT_EXPLEN:
@@ -89,8 +89,7 @@ def get_break_beats(break_element: str):
 
     return duration_in_32nd
 
-
-def get_tuplet_beats(tuplet: str, is_in_slur: bool):
+def get_tuplet_info(tuplet: str, is_in_slur: bool):
     if tuplet[-1] != TUPLET_CLOSE:
         raise ElementError(tuplet, f"tuplet must end with a '{TUPLET_CLOSE}")
 
@@ -113,9 +112,6 @@ def get_tuplet_beats(tuplet: str, is_in_slur: bool):
     if grouping <= 0:
         raise ElementError(tuplet, f"grouping '{grouping}' must be greater than 0")
 
-    if regular_duration <= 0:
-        raise ElementError(tuplet, f"regular duration '{regular_duration}' must be greater than 0")
-
     if not regular_duration in VALID_DURATIONS:
         raise ElementError(tuplet, f"regular duration '{regular_duration}' is invalid")
 
@@ -123,20 +119,23 @@ def get_tuplet_beats(tuplet: str, is_in_slur: bool):
     expected_tuplet_beat_count = grouping * duration_to_32nd[regular_duration]
     actual_tuplet_beat_count = 0
 
+    tuplet_note_count, tuplet_break_count = 0, 0
     tuplet_elements = tuplet[tuplet_open_idx + 1:-1].split(TUPLET_SEP_NOTE)
     for tuplet_element in tuplet_elements:
         if tuplet_element[0] == BREAK_SYM:
-            actual_tuplet_beat_count += get_break_beats(tuplet_element)
+            actual_tuplet_beat_count += get_break_info(tuplet_element)
+            tuplet_break_count += 1
         else:
-            beats_obtained, is_in_slur = get_note_beats(tuplet_element, is_in_slur)
+            beats_obtained, is_in_slur = get_note_info(tuplet_element, is_in_slur)
             actual_tuplet_beat_count += beats_obtained
+            tuplet_note_count += 1
 
     if expected_tuplet_beat_count != actual_tuplet_beat_count:
         raise ElementError(tuplet, "tuplet beat count does not match")
 
-    return no_regular_notes * duration_to_32nd[regular_duration], is_in_slur
+    return no_regular_notes * duration_to_32nd[regular_duration], is_in_slur, tuplet_note_count, tuplet_break_count
 
-def validate_bar_beats(actual_beat_count, tsig_top, tsig_bottom):
+def validate_bar_beats(actual_beat_count: int, tsig_top: int, tsig_bottom: int):
     try:
         expected_beat_count = tsig_top * duration_to_32nd[tsig_bottom]
     except:
