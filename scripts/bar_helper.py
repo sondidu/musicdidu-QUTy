@@ -10,13 +10,13 @@ duration_to_32nd = {
     32 : 1
 }
 
-def get_note_info(note_element: str, is_in_slur: bool):
-    parts = note_element.split(NOTESTRUCT_SEP)
+def get_note_info(note_element: str, slur_state: bool):
+    parts = note_element.split(NOTE_ELM_SEP)
 
-    if not len(parts) in VALID_NOTESTRUCT_LENS:
-        raise ElementError(note_element, f"Unexpected number of parts '{NOTESTRUCT_SEP}'")
+    if not len(parts) in VALID_NOTE_ELM_LENS:
+        raise ElementError(note_element, f"Unexpected number of parts '{NOTE_ELM_SEP}'")
 
-    note, duration = parts[:NOTESTRUCT_EXPLEN_SHORT]
+    note, duration = parts[:NOTE_ELM_EXPLEN_SHORT]
 
     # Check accidental (sharp, flat, regular)
     if len(note) == NOTE_EXPLEN_LONG:
@@ -47,11 +47,11 @@ def get_note_info(note_element: str, is_in_slur: bool):
     duration_in_32nd = duration_to_32nd[int(duration)]
 
     # No additionals
-    if len(parts) == NOTESTRUCT_EXPLEN_SHORT:
-        return duration_in_32nd, is_in_slur
+    if len(parts) == NOTE_ELM_EXPLEN_SHORT:
+        return duration_in_32nd, slur_state
 
     # Check additionals
-    additionals = parts[NOTESTRUCT_IDX_ADDITIONALS]
+    additionals = parts[NOTE_ELM_IDX_ADDITIONALS]
     if len(set(additionals)) != len(additionals):
         raise ElementError(note_element, f"All additionals '{additionals}' must be unique")
     if not all(additional in VALID_ADDITIONALS for additional in additionals):
@@ -60,24 +60,24 @@ def get_note_info(note_element: str, is_in_slur: bool):
         raise ElementError(note_element, f"Additionals '{additionals}' must not contain both '{ADDITIONAL_SLUR_BEGIN}' and '{ADDITIONAL_SLUR_END}'")
 
     if ADDITIONAL_SLUR_BEGIN in additionals:
-        if is_in_slur:
+        if slur_state:
             raise ElementError(note_element, f"Currently in slur but found {ADDITIONAL_SLUR_BEGIN}")
-        is_in_slur = True
+        slur_state = True
     elif ADDITIONAL_SLUR_END in additionals:
-        if not is_in_slur:
+        if not slur_state:
             raise ElementError(note_element, f"Currently not in slur but found {ADDITIONAL_SLUR_END}")
-        is_in_slur = False
+        slur_state = False
 
     if ADDITIONAL_DOTNOTE in additionals:
         duration_in_32nd += duration_in_32nd // 2 # Add half its value
 
-    return duration_in_32nd, is_in_slur
+    return duration_in_32nd, slur_state
 
 def get_break_info(break_element: str):
-    parts = break_element.split(BREAKSTRUCT_SEP)
+    parts = break_element.split(BREAK_ELM_SEP)
 
-    if len(parts) != BREAKSTRUCT_EXPLEN:
-        raise ElementError(break_element, f"Unexpected number of parts '{BREAKSTRUCT_SEP}'")
+    if len(parts) != BREAK_ELM_EXPLEN:
+        raise ElementError(break_element, f"Unexpected number of parts '{BREAK_ELM_SEP}'")
 
     break_char, duration = parts
 
@@ -94,7 +94,7 @@ def get_break_info(break_element: str):
 
     return duration_to_32nd[int(duration)]
 
-def get_tuplet_info(tuplet: str, is_in_slur: bool):
+def get_tuplet_info(tuplet: str, slur_state: bool):
     # Unlikely to happen
     if tuplet[-1] != TUPLET_CLOSE:
         raise ElementError(tuplet, f"Tuplet must end with a '{TUPLET_CLOSE}")
@@ -141,7 +141,7 @@ def get_tuplet_info(tuplet: str, is_in_slur: bool):
             actual_tuplet_beat_count += get_break_info(tuplet_element)
             tuplet_break_count += 1
         else:
-            beats_obtained, is_in_slur = get_note_info(tuplet_element, is_in_slur)
+            beats_obtained, slur_state = get_note_info(tuplet_element, slur_state)
             actual_tuplet_beat_count += beats_obtained
             tuplet_note_count += 1
 
@@ -149,7 +149,7 @@ def get_tuplet_info(tuplet: str, is_in_slur: bool):
         raise ElementError(tuplet, f"Expected {expected_tuplet_beat_count} tuplet beats (in 32nds) but got {actual_tuplet_beat_count}")
 
     actual_beat_count = no_regular_notes * duration_to_32nd[regular_duration]
-    return actual_beat_count, is_in_slur, tuplet_note_count, tuplet_break_count
+    return actual_beat_count, slur_state, tuplet_note_count, tuplet_break_count
 
 def validate_bar_beats(actual_beat_count: int, tsig_top: int, tsig_bottom: int):
     try:

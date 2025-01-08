@@ -1,7 +1,7 @@
 from bar_helper import validate_bar_beats, get_tuplet_info, get_note_info, get_break_info
 from constants.block_enclosures import BAR_CLOSE, BAR_OPEN, SETTING_CLOSE, SETTING_OPEN
 from constants.notes import  BREAK_SYM, ELEMENT_SEP, TUPLET_CLOSE
-from constants.setting_fields import KEY_BPM, KEY_TIMESIG, SEP_FIELD
+from constants.setting_fields import KEY_ANACRUSIS, KEY_BPM, KEY_TIMESIG, SEP_FIELD
 from custom_errors import BeatError, BlockEnclosureError, ElementError, FieldError
 from typing import TextIO
 from setting_block_helper import field_to_key_val
@@ -16,7 +16,7 @@ def split_with_indices(s: str, sep=' '):
 
     return res
 
-def get_bar_info(bar: str, tsig_top: int, tsig_bottom: int, slur_state: bool, line_no: int, line_content: str, bar_start_idx: int):
+def get_bar_info(bar: str, tsig_top: int, tsig_bottom: int, slur_state: bool, anacrusis: bool, line_no: int, line_content: str, bar_start_idx: int):
     content = bar.strip(BAR_OPEN + BAR_CLOSE)
     elements = split_with_indices(content, ELEMENT_SEP)
 
@@ -55,7 +55,8 @@ def get_bar_info(bar: str, tsig_top: int, tsig_bottom: int, slur_state: bool, li
         return errors
 
     try:
-        validate_bar_beats(beat_count, tsig_top, tsig_bottom)
+        if not anacrusis:
+            validate_bar_beats(beat_count, tsig_top, tsig_bottom)
     except BeatError as error:
         first_line = f"{line_content} at line {line_no}\n"
         pointer = '^'
@@ -108,6 +109,7 @@ def process_sheet(file: TextIO):
     tsig_top = None
     tsig_bottom = None
     bpm = None
+    anacrusis = False
     slur_state = False
 
     for line_no, line in enumerate(file, start=1):
@@ -158,7 +160,8 @@ def process_sheet(file: TextIO):
                     return errors
 
                 bar = block
-                bar_info_or_errors = get_bar_info(bar, tsig_top, tsig_bottom, slur_state, line_no, line, open_enclosure_idx)
+                bar_info_or_errors = get_bar_info(bar, tsig_top, tsig_bottom, slur_state, anacrusis, line_no, line, open_enclosure_idx)
+                anacrusis = False # It's possible that this was True, hence set to False afterwards
                 bar_count += 1
 
                 if type(bar_info_or_errors) == list:
@@ -190,6 +193,9 @@ def process_sheet(file: TextIO):
                         tsig_top, tsig_bottom = setting_info_or_errors[KEY_TIMESIG]
                     if KEY_BPM in setting_info_or_errors:
                         bpm = setting_info_or_errors[KEY_BPM]
+                    if KEY_ANACRUSIS in setting_info_or_errors:
+                        if setting_info_or_errors[KEY_ANACRUSIS] == "True":
+                            anacrusis = True
 
             open_enclosure_idx = None # Prepare for next block
 
