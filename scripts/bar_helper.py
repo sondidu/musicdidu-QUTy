@@ -48,7 +48,7 @@ def get_note_info(note_element: str, slur_state: bool):
 
     # No additionals
     if len(parts) == NOTE_ELM_EXPLEN_SHORT:
-        return note, duration_in_32nd, None, slur_state
+        return note, duration_in_32nd, '', slur_state
 
     # Check additionals
     additionals = parts[NOTE_ELM_IDX_ADDITIONALS]
@@ -56,9 +56,11 @@ def get_note_info(note_element: str, slur_state: bool):
         raise ElementError(note_element, f"All additionals '{additionals}' must be unique")
     if not all(additional in VALID_ADDITIONALS for additional in additionals):
         raise ElementError(note_element, f"Not all additionals '{additionals}' are valid")
+    if additionals == '':
+        raise ElementError(note_element, "Additionals '' cannot be empty")
+
     if ADDITIONAL_SLUR_BEGIN in additionals and ADDITIONAL_SLUR_END in additionals:
         raise ElementError(note_element, f"Additionals '{additionals}' must not contain both '{ADDITIONAL_SLUR_BEGIN}' and '{ADDITIONAL_SLUR_END}'")
-
     if ADDITIONAL_SLUR_BEGIN in additionals:
         if slur_state:
             raise ElementError(note_element, f"Currently in slur but found {ADDITIONAL_SLUR_BEGIN}")
