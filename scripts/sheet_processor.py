@@ -29,7 +29,7 @@ def get_bar_info(bar: str, tsig_top: int, tsig_bottom: int, slur_state: bool, an
                 raise ElementError(element, "No empty element (possibly double spaces)")
             # Tuplets
             elif element[-1] == TUPLET_CLOSE:
-                tuplet_elements, beats_obtained, slur_state = get_tuplet_info(element, slur_state)
+                tuplet_definition, tuplet_elements, beats_obtained, slur_state = get_tuplet_info(element, slur_state)
 
                 # Count notes and breaks
                 for symbol, *other_element_info in tuplet_elements:

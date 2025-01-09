@@ -151,7 +151,7 @@ def get_tuplet_info(tuplet: str, slur_state: bool):
         raise ElementError(tuplet, f"Expected {expected_tuplet_beat_count} tuplet beats (in 32nds) but got {actual_tuplet_beat_count}")
 
     actual_beat_count = no_regular_notes * duration_to_32nd[regular_duration]
-    return tuplet_elements_parsed, actual_beat_count, slur_state
+    return (grouping, no_regular_notes, regular_duration), tuplet_elements_parsed, actual_beat_count, slur_state
 
 def validate_bar_beats(actual_beat_count: int, tsig_top: int, tsig_bottom: int):
     try:
