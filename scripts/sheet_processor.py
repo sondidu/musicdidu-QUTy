@@ -20,7 +20,7 @@ def get_bar_info(bar: str, tsig_top: int, tsig_bottom: int, slur_state: bool, an
     content = bar.strip(BAR_OPEN + BAR_CLOSE)
     elements = split_with_indices(content, ELEMENT_SEP)
 
-    beat_count, element_count, note_count, break_count = 0, 0, 0, 0
+    beat_count, note_count, break_count = 0, 0, 0
     errors = []
     for idx, element in elements:
         try:
@@ -29,19 +29,24 @@ def get_bar_info(bar: str, tsig_top: int, tsig_bottom: int, slur_state: bool, an
                 raise ElementError(element, "No empty element (possibly double spaces)")
             # Tuplets
             elif element[-1] == TUPLET_CLOSE:
-                beats_obtained, slur_state, tuplet_note_count, tuplet_break_count = get_tuplet_info(element, slur_state)
+                tuplet_elements, beats_obtained, slur_state = get_tuplet_info(element, slur_state)
+
+                # Count notes and breaks
+                for symbol, *other_element_info in tuplet_elements:
+                    if symbol == BREAK_SYM:
+                        break_count += 1
+                    else:
+                        note_count += 1
 
                 beat_count += beats_obtained
-                element_count += 1
-                note_count += tuplet_note_count
-                break_count += tuplet_break_count
+
             # Breaks
             elif element[0] == BREAK_SYM:
                 beat_count += get_break_info(element)
                 break_count += 1
             # Notes
             else:
-                beats_obtained, slur_state = get_note_info(element, slur_state)
+                note, beats_obtained, additionals, slur_state = get_note_info(element, slur_state)
                 beat_count += beats_obtained
                 note_count += 1
         except ElementError as error:
@@ -63,7 +68,7 @@ def get_bar_info(bar: str, tsig_top: int, tsig_bottom: int, slur_state: bool, an
         constructed_msg = first_line + pointer + ' ' + str(error)
         return [constructed_msg]
 
-    return slur_state, beat_count, element_count, note_count, break_count
+    return slur_state, beat_count, len(elements), note_count, break_count
 
 def get_setting_info(setting_block: str, line_no: int, line_content: str, setting_start_idx: int):
     content = setting_block.strip(SETTING_OPEN + SETTING_CLOSE)

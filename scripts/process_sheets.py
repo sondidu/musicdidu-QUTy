@@ -52,12 +52,12 @@ for filename in os.listdir(sheets_dir):
 
         print(f"Validating {filename} is complete! Here are its info:")
         print(f"- Block count: {block_count}")
-        print(f"- Bar count: {bar_count}")
-        print(f"- Setting Block count: {setting_count}")
+        print(f"   - Bar count: {bar_count}")
+        print(f"   - Setting Block count: {setting_count}")
         print(f"- Total beats: {beat_count}")
         print(f"- Total elements: {element_count}")
-        print(f"- Total notes: {note_count}")
-        print(f"- Total breaks: {break_count}")
+        print(f"   - Total notes: {note_count}")
+        print(f"   - Total breaks: {break_count}")
 
 # c_file_content += 'const FlashFile available_files[] = {\n'
 

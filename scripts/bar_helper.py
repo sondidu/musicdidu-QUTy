@@ -48,7 +48,7 @@ def get_note_info(note_element: str, slur_state: bool):
 
     # No additionals
     if len(parts) == NOTE_ELM_EXPLEN_SHORT:
-        return duration_in_32nd, slur_state
+        return note, duration_in_32nd, None, slur_state
 
     # Check additionals
     additionals = parts[NOTE_ELM_IDX_ADDITIONALS]
@@ -71,7 +71,7 @@ def get_note_info(note_element: str, slur_state: bool):
     if ADDITIONAL_DOTNOTE in additionals:
         duration_in_32nd += duration_in_32nd // 2 # Add half its value
 
-    return duration_in_32nd, slur_state
+    return note, duration_in_32nd, additionals, slur_state
 
 def get_break_info(break_element: str):
     parts = break_element.split(BREAK_ELM_SEP)
@@ -134,22 +134,22 @@ def get_tuplet_info(tuplet: str, slur_state: bool):
     expected_tuplet_beat_count = grouping * duration_to_32nd[regular_duration]
     actual_tuplet_beat_count = 0
 
-    tuplet_note_count, tuplet_break_count = 0, 0
+    tuplet_elements_parsed = []
     tuplet_elements = tuplet[tuplet_open_idx + 1:-1].split(TUPLET_SEP_NOTE)
     for tuplet_element in tuplet_elements:
         if tuplet_element[0] == BREAK_SYM:
-            actual_tuplet_beat_count += get_break_info(tuplet_element)
-            tuplet_break_count += 1
+            relative_duration += get_break_info(tuplet_element)
+            tuplet_elements_parsed.append((BREAK_SYM, relative_duration))
         else:
-            beats_obtained, slur_state = get_note_info(tuplet_element, slur_state)
-            actual_tuplet_beat_count += beats_obtained
-            tuplet_note_count += 1
+            note, relative_duration, additionals, slur_state = get_note_info(tuplet_element, slur_state)
+            actual_tuplet_beat_count += relative_duration
+            tuplet_elements_parsed.append((note, relative_duration, additionals))
 
     if expected_tuplet_beat_count != actual_tuplet_beat_count:
         raise ElementError(tuplet, f"Expected {expected_tuplet_beat_count} tuplet beats (in 32nds) but got {actual_tuplet_beat_count}")
 
     actual_beat_count = no_regular_notes * duration_to_32nd[regular_duration]
-    return actual_beat_count, slur_state, tuplet_note_count, tuplet_break_count
+    return tuplet_elements_parsed, actual_beat_count, slur_state
 
 def validate_bar_beats(actual_beat_count: int, tsig_top: int, tsig_bottom: int):
     try:
