@@ -1,7 +1,7 @@
 from custom_errors import ElementError
-from bar_helper import get_note_info, get_break_info, get_tuplet_info
+from bar_helper import get_break_info, get_note_info, get_tuplet_info
 from constants.music_code import *
-from constants.notes import ADDITIONAL_FERMATA, ADDITIONAL_STACCATO, NOTE_SYM_A, NOTE_EXPLEN_LONG, NOTE_IDX_SYMBOL, NOTE_ACCIDENTAL_SHARP, NOTE_IDX_ACCIDENTAL, NOTE_IDX_OCTAVE_SHORT, NOTE_IDX_OCTAVE_LONG, DURATION_QUARTER, DURATION_THIRTYSECOND, BREAK_SYM
+from constants.notes import *
 
 def create_music_code_from_note(note: str, total_ticks: int, additionals: str, slur_state: bool):
     # Getting note char and octave
@@ -57,7 +57,7 @@ def break_to_music_code(break_element: str):
 
     total_ticks = duration_in_32nd * TICKS_THIRTYSECOND
 
-    return f"{BREAK_SYM}{total_ticks}"
+    return f"{PREFIX_BREAK}{total_ticks}"
 
 def tuplet_to_music_code(tuplet: str, slur_state: bool):
     try:
@@ -97,6 +97,13 @@ def tuplet_to_music_code(tuplet: str, slur_state: bool):
             music_codes.append(f"{BREAK_SYM}{element_ticks}")
         else:
             duration_in_32nd, additionals = other_info
+
+            # Manually check for slurs
+            if ADDITIONAL_SLUR_END in additionals:
+                slur_state = False
+            elif ADDITIONAL_SLUR_BEGIN in additionals:
+                slur_state = True
+
             music_code = create_music_code_from_note(element_sym, element_ticks, additionals, slur_state)
             music_codes.append(music_code)
 
