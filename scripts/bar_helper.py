@@ -1,14 +1,8 @@
 from constants.notes import *
 from custom_errors import BeatError, ElementError
 
-duration_to_32nd = {
-    1 : 32,
-    2 : 16,
-    4 : 8,
-    8 : 4,
-    16 : 2,
-    32 : 1
-}
+def duration_to_32nd(duration: int):
+    return DURATION_THIRTYSECOND // duration
 
 def get_note_info(note_element: str, slur_state: bool):
     parts = note_element.split(NOTE_ELM_SEP)
@@ -44,7 +38,7 @@ def get_note_info(note_element: str, slur_state: bool):
     if int(duration) not in VALID_DURATIONS:
         raise ElementError(note_element, f"Duration '{duration}' must either be {', '.join(str(num) for num in VALID_DURATIONS)}")
 
-    duration_in_32nd = duration_to_32nd[int(duration)]
+    duration_in_32nd = duration_to_32nd(int(duration))
 
     # No additionals
     if len(parts) == NOTE_ELM_EXPLEN_SHORT:
@@ -91,10 +85,10 @@ def get_break_info(break_element: str):
     if not duration.isnumeric():
         raise ElementError(break_element, f"Duration must be a number")
 
-    if int(duration) not in duration_to_32nd:
+    if int(duration) not in VALID_DURATIONS:
         raise ElementError(break_element, f"Duration must either be {', '.join(str(num) for num in VALID_DURATIONS)}")
 
-    return duration_to_32nd[int(duration)]
+    return duration_to_32nd(int(duration))
 
 def get_tuplet_info(tuplet: str, slur_state: bool):
     # Unlikely to happen
@@ -133,14 +127,15 @@ def get_tuplet_info(tuplet: str, slur_state: bool):
 
 
     # Validating individual notes in tuplet
-    expected_tuplet_beat_count = grouping * duration_to_32nd[regular_duration]
+    expected_tuplet_beat_count = grouping * duration_to_32nd(regular_duration)
     actual_tuplet_beat_count = 0
 
     tuplet_elements_parsed = []
     tuplet_elements = tuplet[tuplet_open_idx + 1:-1].split(TUPLET_SEP_NOTE)
     for tuplet_element in tuplet_elements:
         if tuplet_element[0] == BREAK_SYM:
-            relative_duration += get_break_info(tuplet_element)
+            relative_duration = get_break_info(tuplet_element)
+            actual_tuplet_beat_count += relative_duration
             tuplet_elements_parsed.append((BREAK_SYM, relative_duration))
         else:
             note, relative_duration, additionals, slur_state = get_note_info(tuplet_element, slur_state)
@@ -150,12 +145,12 @@ def get_tuplet_info(tuplet: str, slur_state: bool):
     if expected_tuplet_beat_count != actual_tuplet_beat_count:
         raise ElementError(tuplet, f"Expected {expected_tuplet_beat_count} tuplet beats (in 32nds) but got {actual_tuplet_beat_count}")
 
-    actual_beat_count = no_regular_notes * duration_to_32nd[regular_duration]
+    actual_beat_count = no_regular_notes * duration_to_32nd(regular_duration)
     return (grouping, no_regular_notes, regular_duration), tuplet_elements_parsed, actual_beat_count, slur_state
 
 def validate_bar_beats(actual_beat_count: int, tsig_top: int, tsig_bottom: int):
     try:
-        expected_beat_count = tsig_top * duration_to_32nd[tsig_bottom]
+        expected_beat_count = tsig_top * duration_to_32nd(tsig_bottom)
     except:
         raise BeatError(msg="Time signature was never set")
 
