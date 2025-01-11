@@ -159,7 +159,7 @@ def validate_bar_beats(actual_beat_count: int, tsig_top: int, tsig_bottom: int):
     if actual_beat_count != expected_beat_count:
         raise BeatError(expected_beat_count, actual_beat_count)
 
-def get_bar_info(bar: str, tsig_top: int, tsig_bottom: int, slur_state: bool, anacrusis: bool, line_no: int, line_content: str, bar_start_idx: int):
+def get_bar_info(bar: str, tsig_top: int, tsig_bottom: int, slur_state: bool, anacrusis=False, line_no=0, line_content='', bar_start_idx=0):
     content = bar.strip(BAR_OPEN + BAR_CLOSE)
     elements = split_with_indices(content, ELEMENT_SEP)
 

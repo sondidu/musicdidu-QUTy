@@ -56,7 +56,7 @@ def field_to_key_val(field: str):
 
     return key, val
 
-def get_setting_info(setting_block: str, line_no: int, line_content: str, setting_start_idx: int):
+def get_setting_info(setting_block: str, line_no=0, line_content='', setting_start_idx=0):
     content = setting_block.strip(SETTING_OPEN + SETTING_CLOSE)
     fields = split_with_indices(content, SEP_FIELD)
 
