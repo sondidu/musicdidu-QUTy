@@ -1,5 +1,7 @@
+from constants.block_enclosures import BAR_CLOSE, BAR_OPEN
 from constants.notes import *
 from custom_errors import BeatError, ElementError
+from utils import split_with_indices
 
 def duration_to_32nd(duration: int):
     return DURATION_THIRTYSECOND // duration
@@ -156,3 +158,57 @@ def validate_bar_beats(actual_beat_count: int, tsig_top: int, tsig_bottom: int):
 
     if actual_beat_count != expected_beat_count:
         raise BeatError(expected_beat_count, actual_beat_count)
+
+def get_bar_info(bar: str, tsig_top: int, tsig_bottom: int, slur_state: bool, anacrusis: bool, line_no: int, line_content: str, bar_start_idx: int):
+    content = bar.strip(BAR_OPEN + BAR_CLOSE)
+    elements = split_with_indices(content, ELEMENT_SEP)
+
+    beat_count, note_count, break_count = 0, 0, 0
+    errors = []
+    for idx, element in elements:
+        try:
+            # Empty note
+            if element == '':
+                raise ElementError(element, "No empty element (possibly double spaces)")
+            # Tuplets
+            elif element[-1] == TUPLET_CLOSE:
+                tuplet_definition, tuplet_elements, beats_obtained, slur_state = get_tuplet_info(element, slur_state)
+
+                # Count notes and breaks
+                for symbol, *other_element_info in tuplet_elements:
+                    if symbol == BREAK_SYM:
+                        break_count += 1
+                    else:
+                        note_count += 1
+
+                beat_count += beats_obtained
+
+            # Breaks
+            elif element[0] == BREAK_SYM:
+                beat_count += get_break_info(element)
+                break_count += 1
+            # Notes
+            else:
+                note, beats_obtained, additionals, slur_state = get_note_info(element, slur_state)
+                beat_count += beats_obtained
+                note_count += 1
+        except ElementError as error:
+            first_line = f"{line_content} at line {line_no}\n"
+            pointer = (bar_start_idx + idx + 1) * ' ' + '^' # The plus one is to account the open enclosure
+
+            constructed_msg = first_line + pointer + ' ' + str(error)
+            errors.append(constructed_msg)
+
+    if len(errors) != 0:
+        return errors
+
+    try:
+        if not anacrusis:
+            validate_bar_beats(beat_count, tsig_top, tsig_bottom)
+    except BeatError as error:
+        first_line = f"{line_content} at line {line_no}\n"
+        pointer = '^'
+        constructed_msg = first_line + pointer + ' ' + str(error)
+        return [constructed_msg]
+
+    return slur_state, beat_count, len(elements), note_count, break_count
