@@ -7,40 +7,38 @@ sheets_dir = 'sheets'
 music_code_dir = 'music code'
 output_c_file = os.path.join('src', 'data.c')
 
-c_file_content = '''#include <avr/pgmspace.h>
+c_content_parts = ['''#include <avr/pgmspace.h>
 
 #include "data.h"
 #include "flash.h"
 
-'''
+''']
 
 # Build error if sheets/ is empty
 if (len(os.listdir(sheets_dir)) == 0):
     print("There should be at least one .txt file in the sheets/ directory.")
     sys.exit(1)
 
+validation_fail, validation_succeed = [], []
 available_files = []
 
-print('-' * 10 + '\nProcessing Sheets' + '-' * 10)
+print('Processing Sheets'.center(50, '-'))
+print()
 for filename in os.listdir(sheets_dir):
     # Skip dirs and non-txt files
     if (os.path.isdir(filename) or not filename.endswith('.txt')):
         continue
 
-    # Blindly adding everything
-    # with open(os.path.join(sheets_dir, filename), 'r') as file:
-    #     contents = file.read().replace('\n', '\\n')
-    #     var_name = filename.replace('.', '_')[:-4] # Account for multiple '.'s and remove '.txt'
-    #     c_file_content += f'const char {var_name}_contents[] PROGMEM = "{contents}";\n'
-    #     available_files.append((f'{var_name}_contents', var_name, f'sizeof({var_name}_contents)'))
-
-    with open(os.path.join(sheets_dir, filename), 'r') as file:
+    # Start validating
+    with open(os.path.join(sheets_dir, filename), 'r') as sheet_file:
         print(f'Validating {filename}...')
 
-        errors_or_sheet_info = process_sheet(file)
+        errors_or_sheet_info = process_sheet(sheet_file)
 
         # Has errors
         if type(errors_or_sheet_info) == list:
+            validation_fail.append(filename)
+
             print(f'{filename} errors:')
             for error in errors_or_sheet_info:
                 print(error)
@@ -48,6 +46,9 @@ for filename in os.listdir(sheets_dir):
             continue
 
         # No errors
+        validation_succeed.append(filename)
+
+        # Unpack and print
         block_count, bar_count, setting_count, beat_count, \
             element_count, note_count, break_count = errors_or_sheet_info
 
@@ -64,29 +65,51 @@ for filename in os.listdir(sheets_dir):
         print()
         print(f"Generating music code for {filename}...")
 
-        file.seek(0) # `process_sheet` iterates the entire file, thus need to reset pointer
-        music_codes_per_line = generate_music_code(file)
+        sheet_file.seek(0) # `process_sheet` iterates the entire file, thus need to reset pointer
+        music_codes_per_line = generate_music_code(sheet_file)
+        music_codes_per_line = [' '.join(music_codes) + '\n' for music_codes in music_codes_per_line]
 
+        # Directory may not exist
         if not os.path.exists(music_code_dir):
             os.makedirs(music_code_dir)
 
+        # Write music code to respective files in `music code/`
         output_music_code_path = os.path.join(music_code_dir, filename)
         with open(output_music_code_path, 'w') as music_code_file:
-            music_codes_per_line = [' '.join(music_codes) + '\n' for music_codes in music_codes_per_line] # '\n' needs to be appended
-            music_code_file.writelines(line for line in music_codes_per_line)
-            print(f'\t {output_music_code_path} successfully created!')
+            music_code_file.writelines(music_codes_per_line)
+            print(f'\t{output_music_code_path} successfully created!')
+            print()
 
-        print()
+        # Add C file content
+        var_name = filename[:-4].replace('.', '_') + '_music_code' # Account for multiple '.' and '.txt'
+        music_code_content = ''.join(music_codes_per_line).replace('\n', '\\n')
 
-# c_file_content += 'const FlashFile available_files[] = {\n'
+        c_content_parts.append(f'const char {var_name}[] PROGMEM = "{music_code_content}";\n')
+        available_files.append((f'{var_name}', var_name, f'sizeof({var_name})'))
 
-# for var_name, base_name, size in available_files:
-#     c_file_content += f'    {{{var_name}, "{base_name}", {size}}},\n'
+print('Validation Summary'.center(50, '-'))
 
-# c_file_content += '};\n'
-# c_file_content += 'const uint8_t available_files_count = sizeof(available_files) / sizeof(FlashFile);\n'
+if validation_succeed:
+    print('Succeed: ' + ', '.join(validation_succeed))
 
-# with open(output_c_file, 'w') as file:
-#     file.write(c_file_content)
+if validation_fail:
+    print('Failed: ' + ', '.join(validation_fail))
+    print()
+    print('Some files still have errors.')
+    print(f'{output_c_file} is not generated.')
+    sys.exit(1)
 
-# print(f'{output_file} generated successfully.')
+c_content_parts.append('const FlashFile available_files[] = {\n')
+
+for var_name, base_name, size in available_files:
+    c_content_parts.append(f'    {{{var_name}, "{base_name}", {size}}},\n')
+
+c_content_parts.append('};\n')
+c_content_parts.append('const uint8_t available_files_count = sizeof(available_files) / sizeof(FlashFile);\n')
+
+with open(output_c_file, 'w') as file:
+    c_file_content = ''.join(c_content_parts)
+    file.write(c_file_content)
+
+print()
+print(f'{output_c_file} is generated successfully.')
