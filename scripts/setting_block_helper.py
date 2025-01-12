@@ -1,7 +1,6 @@
 from constants.block_enclosures import SETTING_CLOSE, SETTING_OPEN
 from constants.setting_fields import *
 from custom_errors import FieldError
-from utils import split_with_indices
 
 def field_to_key_val(field: str):
     field_parts = field.split(SEP_KEYVAL)
@@ -55,30 +54,3 @@ def field_to_key_val(field: str):
         raise FieldError(field, f"Invalid key '{key}', valid keys are {', '.join(VALID_KEYS)}")
 
     return key, val
-
-def get_setting_info(setting_block: str, line_no=0, line_content='', setting_start_idx=0):
-    content = setting_block.strip(SETTING_OPEN + SETTING_CLOSE)
-    fields = split_with_indices(content, SEP_FIELD)
-
-    settings_dict = dict()
-    errors = []
-    for idx, field in fields:
-        field_stripped = field.strip()
-        try:
-            key, val = field_to_key_val(field_stripped)
-            if key in settings_dict:
-                raise FieldError(field, f"Multiple instances of key '{key}'")
-            settings_dict[key] = val
-        except FieldError as error:
-            first_line = f"{line_content} at line {line_no}\n"
-            no_of_spaces = setting_start_idx + idx + len(field) - len(field_stripped) + 1 # Account the open enclosure and potential whitespaces in fields
-            pointer = no_of_spaces * ' ' + '^'
-
-            constructed_msg = first_line + pointer + ' ' + str(error)
-            errors.append(constructed_msg)
-
-
-    if len(errors) != 0:
-        return errors
-
-    return settings_dict

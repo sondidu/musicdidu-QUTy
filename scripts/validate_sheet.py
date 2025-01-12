@@ -1,11 +1,103 @@
-from bar_helper import get_bar_info
+from bar_helper import get_break_info, get_note_info, get_tuplet_info, validate_bar_beats
 from constants.block_enclosures import BAR_CLOSE, BAR_OPEN, SETTING_CLOSE, SETTING_OPEN
-from constants.setting_fields import KEY_ANACRUSIS, KEY_BPM, KEY_TIMESIG
+from constants.notes import BREAK_SYM, ELEMENT_SEP, TUPLET_CLOSE
+from constants.setting_fields import KEY_ANACRUSIS, KEY_BPM, KEY_TIMESIG, SEP_FIELD
 from custom_errors import BeatError, BlockEnclosureError, ElementError, FieldError
 from typing import TextIO
-from setting_block_helper import get_setting_info
+from setting_block_helper import field_to_key_val
 
-def process_sheet(file: TextIO):
+def split_with_indices(s: str, sep=' '):
+    parts = s.split(sep)
+    res = [(0, parts[0])]
+
+    for i in range(1, len(parts)):
+        idx, word = res[i - 1]
+        res.append((idx + len(word) + len(sep), parts[i]))
+
+    return res
+
+def get_setting_info(setting_block: str, line_no=0, line_content='', setting_start_idx=0):
+    content = setting_block.strip(SETTING_OPEN + SETTING_CLOSE)
+    fields = split_with_indices(content, SEP_FIELD)
+
+    settings_dict = dict()
+    errors = []
+    for idx, field in fields:
+        field_stripped = field.strip()
+        try:
+            key, val = field_to_key_val(field_stripped)
+            if key in settings_dict:
+                raise FieldError(field, f"Multiple instances of key '{key}'")
+            settings_dict[key] = val
+        except FieldError as error:
+            first_line = f"{line_content} at line {line_no}\n"
+            no_of_spaces = setting_start_idx + idx + len(field) - len(field_stripped) + 1 # Account the open enclosure and potential whitespaces in fields
+            pointer = no_of_spaces * ' ' + '^'
+
+            constructed_msg = first_line + pointer + ' ' + str(error)
+            errors.append(constructed_msg)
+
+
+    if len(errors) != 0:
+        return errors
+
+    return settings_dict
+
+def get_bar_info(bar: str, tsig_top: int, tsig_bottom: int, slur_state: bool, anacrusis=False, line_no=0, line_content='', bar_start_idx=0):
+    content = bar.strip(BAR_OPEN + BAR_CLOSE)
+    elements = split_with_indices(content, ELEMENT_SEP)
+
+    beat_count, note_count, break_count = 0, 0, 0
+    errors = []
+    for idx, element in elements:
+        try:
+            # Empty note
+            if element == '':
+                raise ElementError(element, "No empty element (possibly double spaces)")
+            # Tuplets
+            elif element[-1] == TUPLET_CLOSE:
+                tuplet_definition, tuplet_elements, beats_obtained, slur_state = get_tuplet_info(element, slur_state)
+
+                # Count notes and breaks
+                for symbol, *other_element_info in tuplet_elements:
+                    if symbol == BREAK_SYM:
+                        break_count += 1
+                    else:
+                        note_count += 1
+
+                beat_count += beats_obtained
+
+            # Breaks
+            elif element[0] == BREAK_SYM:
+                beat_count += get_break_info(element)
+                break_count += 1
+            # Notes
+            else:
+                note, beats_obtained, additionals, slur_state = get_note_info(element, slur_state)
+                beat_count += beats_obtained
+                note_count += 1
+        except ElementError as error:
+            first_line = f"{line_content} at line {line_no}\n"
+            pointer = (bar_start_idx + idx + 1) * ' ' + '^' # The plus one is to account the open enclosure
+
+            constructed_msg = first_line + pointer + ' ' + str(error)
+            errors.append(constructed_msg)
+
+    if len(errors) != 0:
+        return errors
+
+    try:
+        if not anacrusis:
+            validate_bar_beats(beat_count, tsig_top, tsig_bottom)
+    except BeatError as error:
+        first_line = f"{line_content} at line {line_no}\n"
+        pointer = '^'
+        constructed_msg = first_line + pointer + ' ' + str(error)
+        return [constructed_msg]
+
+    return slur_state, beat_count, len(elements), note_count, break_count
+
+def validate_sheet(file: TextIO):
     open_enclosure_pairs = {
         BAR_OPEN : BAR_CLOSE,
         SETTING_OPEN : SETTING_CLOSE,

@@ -1,5 +1,5 @@
 from generate_music_code import generate_music_code
-from sheet_processor import process_sheet
+from validate_sheet import validate_sheet
 import os
 import sys
 
@@ -22,7 +22,7 @@ if (len(os.listdir(sheets_dir)) == 0):
 validation_fail, validation_succeed = [], []
 available_files = []
 
-print('Processing Sheets'.center(50, '-'))
+print('Validating Sheets'.center(50, '-'))
 print()
 for filename in os.listdir(sheets_dir):
     # Skip dirs and non-txt files
@@ -33,7 +33,7 @@ for filename in os.listdir(sheets_dir):
     with open(os.path.join(sheets_dir, filename), 'r') as sheet_file:
         print(f'Validating {filename}...')
 
-        errors_or_sheet_info = process_sheet(sheet_file)
+        errors_or_sheet_info = validate_sheet(sheet_file)
 
         # Has errors
         if type(errors_or_sheet_info) == list:
