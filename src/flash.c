@@ -4,6 +4,7 @@
 
 #include "data.h"
 #include "flash.h"
+#include "macros/flash_macros.h"
 
 /**
  * Initializes the reader before use.
@@ -14,6 +15,8 @@ void reader_init(FileReader* reader) {
    reader->file = NULL;
    reader->is_open = 0;
    reader->position = 0;
+   reader->buffer_position = 0;
+   reader->buffer_available = 0;
 }
 
 /**
@@ -49,14 +52,14 @@ int8_t open_file(FileReader* reader, const char* filename) {
  * @param buffer_size The buffer size.
  * @return int16_t
  */
-int16_t read_chunk(FileReader* reader, char* buffer, uint8_t buffer_size) {
+int16_t read_chunk(FileReader* reader) {
     if (!reader->is_open || !reader->file) {
         return -1; // Nothing to read
     }
 
     // Calculate remaining characers to read
     uint16_t remaining = reader->file->size - reader->position;
-    uint16_t to_read = (remaining < buffer_size) ? remaining : buffer_size;
+    uint16_t to_read = (remaining < sizeof(reader->buffer)) ? remaining : sizeof(reader->buffer);
 
     // Reached end of file
     if (to_read == 0) {
@@ -64,59 +67,55 @@ int16_t read_chunk(FileReader* reader, char* buffer, uint8_t buffer_size) {
     }
 
     // Copy chunk to buffer
-    memcpy_P(buffer, reader->file->data + reader->position, to_read);
+    memcpy_P(reader->buffer, reader->file->data + reader->position, to_read);
 
-    // Update position
+    // Update position and buffer variables
     reader->position += to_read;
+    reader->buffer_position = 0;
+    reader->buffer_available = to_read;
 
     return to_read;
 }
 
-/**
- * Copys a line of data from PROGMEM to a buffer, given a
- * reader, buffer and buffer size. A line is all chars from
- * the reader's current position to '\n'.
- *
- * @param reader The address of the reader.
- * @param buffer The address of the buffer.
- * @param buffer_size The buffer size.
- * @return int16_t
- */
-int16_t read_line(FileReader* reader, char* buffer, uint8_t buffer_size) {
+int8_t read_word(FileReader* reader, char* word, uint8_t word_size) {
     if (!reader->is_open || !reader->file) {
         return -1; // Nothing to read
     }
 
-    // Calculate remaining characters to read
-    uint16_t remaining = reader->file->size - reader->position;
-    uint16_t to_read = (remaining < buffer_size) ? remaining : buffer_size;
+    uint8_t word_len = 0;
+    uint8_t in_word = 0; // To track whether we're currently in a word
 
-    // Reached end of file
-    if (to_read == 0) {
-        return 0;
-    }
+    while (word_len < word_size - 1) { // Minus one for null terminator
+        // Refill buffer if no more available
+        if (reader->buffer_position >= reader->buffer_available) {
+            int16_t bytes_read = read_chunk(reader);
 
-    // Initialize newline offset at available chars to read by default
-    uint8_t newline_offset = to_read;
-
-    // Search for newline
-    const char* data = reader->file->data; // Prevents writing 'reader->file->data' all the time
-    uint8_t found_newline_flag = 0;
-    for (uint8_t i = 0; i < to_read; i++) {
-        if (pgm_read_byte(&(data[reader->position + i])) == '\n') {
-            newline_offset = i;
-            found_newline_flag = 1;
-            break;
+            if (bytes_read <= 0) {
+                // EOF or error
+                break;
+            }
         }
+
+        // Get char from buffer
+        char c = reader->buffer[reader->buffer_position++];
+
+        // Skip whitespace
+        if (c == ' ' || c == '\n') {
+            if (in_word) {
+                // Have found end of word
+                break;
+            }
+
+            // Keep skipping whitespaces
+            continue;
+        }
+
+        word[word_len++] = c;
+        in_word = 1;
     }
 
-    // Copy line to buffer
-    memcpy_P(buffer, data + reader->position, newline_offset);
-
-    // Update position
-    reader->position += (found_newline_flag) ? newline_offset + 1 : newline_offset;
-
-    return newline_offset;
+    word[word_len] = '\0'; // Null terminate
+    return word_len;
 }
 
 /**
@@ -126,11 +125,18 @@ int16_t read_line(FileReader* reader, char* buffer, uint8_t buffer_size) {
  * @return uint8_t
  */
 uint8_t is_eof(FileReader* reader) {
-    uint8_t is_closed = !reader->is_open;
-    uint8_t is_file_null = !reader->file;
-    uint8_t is_position_at_end = reader->position >= reader->file->size;
+    // File is open
+    if (!reader->is_open || !reader->file) {
+        return 1;
+    }
 
-    return is_closed || is_file_null || is_position_at_end;
+    // There's still some data in the buffer
+    if (reader->buffer_position < reader->buffer_available) {
+        return 0;
+    }
+
+    // Finally, compare position and file size
+    return reader->position >= reader->file->size;
 }
 
 /**
@@ -142,4 +148,6 @@ void close_file(FileReader* reader) {
     reader->file = NULL;
     reader->is_open = 0;
     reader->position = 0;
+    reader->buffer_position = 0;
+    reader->buffer_available = 0;
 }

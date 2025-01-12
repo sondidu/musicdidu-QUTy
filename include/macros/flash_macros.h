@@ -1,0 +1,6 @@
+#ifndef FLASH_MACROS_H
+#define FLASH_MACROS_H
+
+#define FILE_READER_BUFFER_SIZE 128
+
+#endif
