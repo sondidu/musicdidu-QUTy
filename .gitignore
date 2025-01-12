@@ -10,3 +10,6 @@ sheets/*
 
 # Ignore __pycache__/ wherever it is
 **/__pycache__/
+
+# Ignore music code/
+music code/

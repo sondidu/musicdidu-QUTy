@@ -1,10 +1,11 @@
-from custom_errors import BlockEnclosureError
+from generate_music_code import generate_music_code
 from sheet_processor import process_sheet
 import os
 import sys
 
 sheets_dir = 'sheets'
-output_file = 'src/data.c'
+music_code_dir = 'music code'
+output_c_file = os.path.join('src', 'data.c')
 
 c_file_content = '''#include <avr/pgmspace.h>
 
@@ -59,6 +60,24 @@ for filename in os.listdir(sheets_dir):
         print(f"   - Total notes: {note_count}")
         print(f"   - Total breaks: {break_count}")
 
+        # Generating music code file
+        print()
+        print(f"Generating music code for {filename}...")
+
+        file.seek(0) # `process_sheet` iterates the entire file, thus need to reset pointer
+        music_codes_per_line = generate_music_code(file)
+
+        if not os.path.exists(music_code_dir):
+            os.makedirs(music_code_dir)
+
+        output_music_code_path = os.path.join(music_code_dir, filename)
+        with open(output_music_code_path, 'w') as music_code_file:
+            music_codes_per_line = [' '.join(music_codes) + '\n' for music_codes in music_codes_per_line] # '\n' needs to be appended
+            music_code_file.writelines(line for line in music_codes_per_line)
+            print(f'\t {output_music_code_path} successfully created!')
+
+        print()
+
 # c_file_content += 'const FlashFile available_files[] = {\n'
 
 # for var_name, base_name, size in available_files:
@@ -67,7 +86,7 @@ for filename in os.listdir(sheets_dir):
 # c_file_content += '};\n'
 # c_file_content += 'const uint8_t available_files_count = sizeof(available_files) / sizeof(FlashFile);\n'
 
-# with open(output_file, 'w') as file:
+# with open(output_c_file, 'w') as file:
 #     file.write(c_file_content)
 
 # print(f'{output_file} generated successfully.')

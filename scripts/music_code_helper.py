@@ -46,7 +46,7 @@ def note_to_music_code(note_element: str, slur_state: bool):
 
     total_ticks = duration_in_32nd * TICKS_THIRTYSECOND
     music_code = create_music_code_from_note(note, total_ticks, additionals, new_slur_state)
-    return music_code, new_slur_state
+    return music_code, new_slur_state, total_ticks
 
 def break_to_music_code(break_element: str):
     try:
@@ -57,9 +57,9 @@ def break_to_music_code(break_element: str):
 
     total_ticks = duration_in_32nd * TICKS_THIRTYSECOND
 
-    return f"{PREFIX_BREAK}{total_ticks}"
+    return f"{PREFIX_BREAK}{total_ticks}", total_ticks
 
-def tuplet_to_music_code(tuplet: str, slur_state: bool):
+def tuplet_to_music_codes(tuplet: str, slur_state: bool):
     try:
         definition, elements, actual_beat_count, final_slur_state = get_tuplet_info(tuplet, slur_state)
     except ElementError:
@@ -107,4 +107,4 @@ def tuplet_to_music_code(tuplet: str, slur_state: bool):
             music_code = create_music_code_from_note(element_sym, element_ticks, additionals, slur_state)
             music_codes.append(music_code)
 
-    return music_codes, final_slur_state
+    return music_codes, final_slur_state, total_ticks
