@@ -1,9 +1,9 @@
 from music_code_helper import break_to_music_code,note_to_music_code, tuplet_to_music_codes
 from constants.block_enclosures import *
-from constants.setting_fields import KEY_ANACRUSIS, KEY_BPM, KEY_SKIPBARS, KEY_TIMESIG, SEP_VAL_TIMESIG
+from constants.setting_fields import ANACRUSIS_VAL_TRUE, KEY_ANACRUSIS, KEY_BPM, KEY_SKIPBARS, KEY_TIMESIG, SEP_VAL_TIMESIG, SEP_FIELD
 from constants.music_code import PREFIX_ANACRUSIS, PREFIX_BPM, PREFIX_TIMESIG
-from constants.notes import ELEMENT_SEP, BREAK_SYM, TUPLET_CLOSE
-from setting_block_helper import get_setting_info
+from constants.notes import BREAK_SYM, ELEMENT_SEP, TUPLET_CLOSE
+from setting_block_helper import field_to_key_val
 from typing import TextIO
 
 def bar_to_music_codes(bar_content: str, slur_state: bool):
@@ -34,14 +34,18 @@ def bar_to_music_codes(bar_content: str, slur_state: bool):
     return music_codes, slur_state, bar_ticks
 
 def setting_block_to_music_codes(setting_block_content: str):
-    settings_dict = get_setting_info(setting_block_content)
+    fields = setting_block_content.split(SEP_FIELD)
 
-    anacrusis = False # Needs further processing to generate music code
-    skip_bars = 0 # No music code is generated, but important for iterating bars
+    anacrusis = False
+    skip_bars = 0
 
     music_codes = []
-    for key, val in settings_dict.items():
-        if key == KEY_ANACRUSIS:
+    for field in fields:
+        field = field.replace(' ', '')
+
+        key, val = field_to_key_val(field)
+
+        if key == KEY_ANACRUSIS and val == ANACRUSIS_VAL_TRUE:
             anacrusis = True
         elif key == KEY_SKIPBARS:
             skip_bars = int(val)
