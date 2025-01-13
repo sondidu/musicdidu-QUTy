@@ -44,13 +44,11 @@ int8_t open_file(FileReader* reader, const char* filename) {
 }
 
 /**
- * Copys a chunk of chars from PROGMEM to a buffer, given a
- * reader, buffer, and buffer size.
+ * Copys a chunk of chars from PROGMEM to the reader's buffer,
+ * given a reader.
  *
  * @param reader The address of the reader.
- * @param buffer The address of the buffer.
- * @param buffer_size The buffer size.
- * @return int16_t
+ * @return int16_t The number of chars read.
  */
 int16_t read_chunk(FileReader* reader) {
     if (!reader->is_open || !reader->file) {
@@ -77,16 +75,25 @@ int16_t read_chunk(FileReader* reader) {
     return to_read;
 }
 
-int8_t read_word(FileReader* reader, char* word, uint8_t word_size) {
+/**
+ * Copys the next word from reader to a word buffer,
+ * given a reader, word buffer and word buffer's size.
+ * 
+ * @param reader The address of the reader.
+ * @param word_buffer The word buffer to copy to.
+ * @param word_buffer_size The size of the word buffer.
+ * @return int8_t 
+ */
+int8_t read_word(FileReader* reader, char* word_buffer, uint8_t word_buffer_size) {
     if (!reader->is_open || !reader->file) {
         return -1; // Nothing to read
     }
 
     uint8_t word_len = 0;
-    uint8_t in_word = 0; // To track whether we're currently in a word
+    uint8_t is_in_word = 0; // To track whether we're currently in a word
 
-    while (word_len < word_size - 1) { // Minus one for null terminator
-        // Refill buffer if no more available
+    while (word_len < word_buffer_size - 1) { // Minus one for null terminator
+        // Refill reader's buffer if no more chars available
         if (reader->buffer_position >= reader->buffer_available) {
             int16_t bytes_read = read_chunk(reader);
 
@@ -96,25 +103,25 @@ int8_t read_word(FileReader* reader, char* word, uint8_t word_size) {
             }
         }
 
-        // Get char from buffer
+        // Get char from reader's buffer
         char c = reader->buffer[reader->buffer_position++];
 
         // Skip whitespace
         if (c == ' ' || c == '\n') {
-            if (in_word) {
+            if (is_in_word) {
                 // Have found end of word
                 break;
             }
 
-            // Keep skipping whitespaces
+            // Haven't found beginning of a word, still skipping whitespaces
             continue;
         }
 
-        word[word_len++] = c;
-        in_word = 1;
+        word_buffer[word_len++] = c;
+        is_in_word = 1;
     }
 
-    word[word_len] = '\0'; // Null terminate
+    word_buffer[word_len] = '\0'; // Null terminate
     return word_len;
 }
 
