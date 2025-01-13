@@ -67,7 +67,10 @@ for filename in os.listdir(sheets_dir):
 
         sheet_file.seek(0) # `process_sheet` iterates the entire file, thus need to reset pointer
         music_codes_per_line = generate_music_code(sheet_file)
-        music_codes_per_line = [' '.join(music_codes) + '\n' for music_codes in music_codes_per_line]
+
+        # Converting to one big music code separated with newlines and spaces
+        music_codes_per_line = [' '.join(music_codes) for music_codes in music_codes_per_line]
+        music_codes_per_line = '\n'.join(music_codes_per_line)
 
         # Directory may not exist
         if not os.path.exists(music_code_dir):
