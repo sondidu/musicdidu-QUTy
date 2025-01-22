@@ -1,6 +1,6 @@
 #include <avr/pgmspace.h>
 #include <stdint.h>
-#include <string.h>
+#include <stddef.h> // For NULL
 
 #include "data.h"
 #include "flash.h"
@@ -23,34 +23,32 @@ void reader_init(FileReader* reader) {
  * Opens a file given a reader and the filename.
  *
  * @param reader The address of the reader.
- * @param filename The filename.
- * @return int8_t
+ * @param file_idx The file index from `available_files`.
+ * @return int8_t Whether there are errors.
  */
-int8_t open_file(FileReader* reader, const char* filename) {
+int8_t open_file(FileReader* reader, uint8_t file_idx) {
     if (reader->is_open) {
         return -1; // File already opened
     }
 
-    for (uint8_t i = 0; i < available_files_count; i++) {
-        if (strcmp(filename, available_files[i].name) == 0) {
-            reader->file = &available_files[i];
-            reader->is_open = 1;
-            reader->position = 0;
-            return 0; // File opened
-        }
+    if (file_idx >= available_files_count) {
+        return -2; // File not found
     }
 
-    return -2; // File not found
+    reader->file = &available_files[file_idx];
+    reader->is_open = 1;
+    reader->position = 0;
+
+    return 0; // File opened
 }
 
 /**
- * Copys a chunk of chars from PROGMEM to the reader's buffer,
- * given a reader.
+ * Fills the reader's buffer given a reader.
  *
  * @param reader The address of the reader.
- * @return int16_t The number of chars read.
+ * @return int16_t The number of chars read, -1 if file isn't opened.
  */
-int16_t read_chunk(FileReader* reader) {
+int16_t fill_buffer(FileReader* reader) {
     if (!reader->is_open || !reader->file) {
         return -1; // Nothing to read
     }
@@ -82,7 +80,7 @@ int16_t read_chunk(FileReader* reader) {
  * @param reader The address of the reader.
  * @param word_buffer The word buffer to copy to.
  * @param word_buffer_size The size of the word buffer.
- * @return int8_t 
+ * @return int8_t Length of word, -1 if file isn't opened.
  */
 int8_t read_word(FileReader* reader, char* word_buffer, uint8_t word_buffer_size) {
     if (!reader->is_open || !reader->file) {
@@ -95,9 +93,9 @@ int8_t read_word(FileReader* reader, char* word_buffer, uint8_t word_buffer_size
     while (word_len < word_buffer_size - 1) { // Minus one for null terminator
         // Refill reader's buffer if no more chars available
         if (reader->buffer_position >= reader->buffer_available) {
-            int16_t bytes_read = read_chunk(reader);
+            int16_t chars_read = fill_buffer(reader);
 
-            if (bytes_read <= 0) {
+            if (chars_read <= 0) {
                 // EOF or error
                 break;
             }
