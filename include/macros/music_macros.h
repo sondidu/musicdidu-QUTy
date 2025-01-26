@@ -33,4 +33,9 @@
 
 #define OCTAVE_STANDARD 4
 
+#define PREFIX_ANACRUSIS 'a'
+#define PREFIX_BPM 'b'
+#define PREFIX_FERMATA 'f'
+#define PREFIX_TIME_SIGNATURE 't'
+
 #endif
