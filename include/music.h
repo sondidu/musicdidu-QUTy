@@ -1,3 +1,5 @@
+#ifndef MUSIC_H
+#define MUSIC_H
 #include <stdint.h>
 
 #include "flash.h"
@@ -18,3 +20,5 @@ void music_play(void);
 void music_pause(void);
 
 void music_stop(void);
+
+#endif

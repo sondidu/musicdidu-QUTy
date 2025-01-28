@@ -6,6 +6,7 @@
 #include "flash.h"
 #include "macros/music_macros.h"
 #include "music.h"
+#include "timers.h"
 
 uint8_t read_next_code, fermata, is_playing = 0;
 
@@ -76,24 +77,35 @@ void parse_music_code(char* music_code) {
 void music_init(uint8_t sheet_idx) {
     reader_init(&sheet_reader);
     open_file(&sheet_reader, sheet_idx);
+
+    // Reset all variables
     is_playing = 0;
+    fermata = 0, is_playing = 0;
+    tsig_top = 0, tsig_bottom = 0;
+    next_octave = 0, next_tsig_top = 0, next_tsig_bottom = 0;
+    ticks_play = 0, ticks_break = 0;
+    next_ticks_play = 0, next_ticks_break = 0, next_note_per = 0, next_bpm_per = 0;
+    anacrusis_ticks = 0;
 
-    char word[10];
-
-    while(1) {
+    do {
+        char word[10];
         uint8_t word_len = read_word(&sheet_reader, word, sizeof(word));
 
         if (!word_len)
             break;
 
-        parse_music_code(word);
+        parse_music_code(word); // Updates `read_next_code`
+    } while (read_next_code);
 
-        // Stop at first note music code
-        if (word[0] != PREFIX_ANACRUSIS &&
-            word[0] != PREFIX_BPM &&
-            word[0] != PREFIX_TIME_SIGNATURE) {
-                break;
-            }
+    // Handle time signature
+    if (next_tsig_top || next_tsig_bottom) {
+        tsig_top = next_tsig_top;
+        tsig_bottom = next_tsig_bottom;
+    }
+
+    // Handle bpm
+    if (next_bpm_per) {
+        tcb0_init(next_bpm_per);
     }
 }
 
@@ -107,6 +119,6 @@ void music_stop(void) {
 
 }
 
-ISR(TCB0_INT_vect) {
+// ISR(TCB0_INT_vect) {
 
-}
+// }
