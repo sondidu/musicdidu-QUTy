@@ -4,24 +4,37 @@
 
 #include "buttons.h"
 #include "display.h"
-#include "macros/music_macros.h"
 
 /**
  * Initialises TCB0 @1.67 MHz (prescaler 2) to generate an
  * interrupt based on BPM and PPQN.
  *
- * @param bpm Beats per minute
- * @warning Disables global interrupts.
+ * @param ccmp_per The CCMP's period value.
+ * @warning Doesn't start immediately.
  */
-void tcb0_init(uint8_t bpm) {
-    cli();
-    TCB0.CCMP = (uint32_t) FREQ_CLK_DIV2 * 60 / bpm / PPQN;
-    TCB0.CNT = 0; // Resetting CNT as this function may be called multiple times.
+void tcb0_init(uint16_t ccmp_per) {
+    TCB0.CCMP = ccmp_per;
+    TCB0.CNT = 0;
     TCB0.CTRLB = TCB_CNTMODE_INT_gc;
     TCB0.INTCTRL = TCB_CAPT_bm;
-    TCB0.CTRLA = TCB_CLKSEL_DIV2_gc | TCB_ENABLE_bm;
+    TCB0.CTRLA = TCB_CLKSEL_DIV2_gc;
 }
-// TODO: Consider a separate function to enable TCB0 😉.
+
+/**
+ * Enables TCB0 with its current configuration (if any).
+ *
+ */
+void tcb0_start(void) {
+    TCB0.CTRLA |= TCB_ENABLE_bm;
+}
+
+/**
+ * Disables TCB0, leaving everything at its state.
+ *
+ */
+void tcb0_stop(void) {
+    TCB0.CTRLA &= ~TCB_ENABLE_bm;
+}
 
 /**
  * Initialises TCB1 to generate an interrupt every 5ms.
