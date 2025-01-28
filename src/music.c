@@ -17,8 +17,13 @@ uint16_t next_ticks_play, next_ticks_break, next_note_per, next_bpm_per;
 uint8_t fermata;
 uint16_t anacrusis_ticks;
 
-uint8_t read_next_code, is_playing = 0;
+volatile uint8_t read_next_code, is_playing = 0;
 FileReader sheet_reader;
+
+uint8_t can_count_beat;
+uint16_t tick_count, beat_counter, beat_count, bar_counter, bar_count;
+
+uint8_t should_stop;
 
 void parse_music_code(char* music_code) {
     switch (music_code[0]) {
@@ -38,6 +43,7 @@ void parse_music_code(char* music_code) {
         }
         case PREFIX_BREAK: {
             sscanf(music_code + 1, "%u", &next_ticks_break);
+            next_note_per = 0;
             read_next_code = 0;
             break;
         }
@@ -52,6 +58,8 @@ void parse_music_code(char* music_code) {
             if (music_code[0] == PREFIX_FERMATA) {
                 note_str++;
                 fermata = 1;
+            } else {
+                fermata = 0;
             }
 
             char note_char;
@@ -86,6 +94,9 @@ void music_init(uint8_t sheet_idx) {
     next_ticks_play = 0, next_ticks_break = 0, next_note_per = 0, next_bpm_per = 0;
     fermata = 0;
     anacrusis_ticks = 0;
+    can_count_beat = 0;
+    beat_counter = 0, beat_count = 0, bar_counter = 0, bar_count = 0;
+    should_stop = 0;
 
     do {
         char word[10];
@@ -107,6 +118,12 @@ void music_init(uint8_t sheet_idx) {
     if (next_bpm_per) {
         tcb0_init(next_bpm_per);
     }
+
+    // Handle notes
+    if (next_ticks_play || next_ticks_break) {
+        ticks_play = next_ticks_play;
+        ticks_break = next_ticks_break;
+    }
 }
 
 void music_play(void) {
@@ -121,9 +138,74 @@ void music_pause(void) {
 
 void music_stop(void) {
     music_pause();
+    buzzer_silent();
     close_file(&sheet_reader);
 }
 
 ISR(TCB0_INT_vect) {
+    if (!is_playing) {
+        // Exit early if not playing
+        TCB0.INTFLAGS = TCB_CAPT_bm;
+        return;
+    }
 
+    // Process tick for current note
+    if (ticks_play) {
+        if (!--ticks_play)
+            buzzer_silent();
+    } else if (ticks_break) {
+        ticks_break--;
+    } else {
+        ticks_play = next_ticks_play;
+        ticks_break = next_ticks_break;
+        read_next_code = 1;
+        if (next_note_per) {
+            buzzer_note(next_note_per, next_octave);
+        } else {
+            buzzer_silent();
+        }
+
+        if (next_bpm_per) {
+            tcb0_stop();
+            tcb0_init(next_bpm_per);
+            tcb0_start();
+            next_bpm_per = 0;
+        }
+
+        if (next_tsig_top || next_tsig_bottom) {
+            tsig_top = next_tsig_top;
+            tsig_bottom = next_tsig_bottom;
+            next_tsig_top = next_tsig_bottom = 0;
+        }
+
+        if (should_stop) {
+            music_stop();
+            TCB0.INTFLAGS = TCB_CAPT_bm;
+            return;
+        }
+    }
+
+    // Calculate bars, beats and ticks
+    tick_count++;
+    if (can_count_beat) {
+        if (++beat_counter == tsig_bottom) {
+            beat_counter = 0;
+            beat_count++;
+
+            if (++bar_counter == tsig_top) {
+                bar_counter = 0;
+                bar_count++;
+            }
+        }
+    }
+
+    if (fermata)
+        can_count_beat = !can_count_beat;
+
+    if (anacrusis_ticks && !--anacrusis_ticks) {
+        beat_counter = 0;
+        bar_counter = 0;
+    }
+
+    TCB0.INTFLAGS = TCB_CAPT_bm; // Acknowledge interrupt
 }
