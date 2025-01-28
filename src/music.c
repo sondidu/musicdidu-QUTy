@@ -8,16 +8,16 @@
 #include "music.h"
 #include "timers.h"
 
-uint8_t read_next_code, fermata, is_playing = 0;
-
 uint8_t tsig_top, tsig_bottom;
 uint8_t next_octave, next_tsig_top, next_tsig_bottom;
 
 uint16_t ticks_play, ticks_break;
 uint16_t next_ticks_play, next_ticks_break, next_note_per, next_bpm_per;
 
+uint8_t fermata;
 uint16_t anacrusis_ticks;
 
+uint8_t read_next_code, is_playing = 0;
 FileReader sheet_reader;
 
 void parse_music_code(char* music_code) {
@@ -80,11 +80,11 @@ void music_init(uint8_t sheet_idx) {
 
     // Reset all variables
     is_playing = 0;
-    fermata = 0, is_playing = 0;
     tsig_top = 0, tsig_bottom = 0;
     next_octave = 0, next_tsig_top = 0, next_tsig_bottom = 0;
     ticks_play = 0, ticks_break = 0;
     next_ticks_play = 0, next_ticks_break = 0, next_note_per = 0, next_bpm_per = 0;
+    fermata = 0;
     anacrusis_ticks = 0;
 
     do {
@@ -110,15 +110,20 @@ void music_init(uint8_t sheet_idx) {
 }
 
 void music_play(void) {
+    is_playing = 1;
+    tcb0_start();
 }
 
 void music_pause(void) {
+    is_playing = 0;
+    tcb0_stop();
 }
 
 void music_stop(void) {
-
+    music_pause();
+    close_file(&sheet_reader);
 }
 
-// ISR(TCB0_INT_vect) {
+ISR(TCB0_INT_vect) {
 
-// }
+}
