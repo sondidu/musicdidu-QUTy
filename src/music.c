@@ -3,27 +3,34 @@
 #include <stdio.h>
 
 #include "buzzer.h"
+#include "display.h"
 #include "flash.h"
 #include "macros/music_macros.h"
 #include "music.h"
 #include "timers.h"
 
+// Time signature variables
 uint8_t tsig_top, tsig_bottom;
 uint8_t next_octave, next_tsig_top, next_tsig_bottom;
 
+// Tick-playing variables
 uint16_t ticks_play, ticks_break;
 uint16_t next_ticks_play, next_ticks_break, next_note_per, next_bpm_per;
 
-uint8_t fermata;
-uint16_t anacrusis_ticks;
+// Fermata and anacrusis
+uint8_t next_fermata;
+volatile uint8_t fermata;
+volatile uint16_t anacrusis_ticks;
 
+// Flags
 volatile uint8_t read_next_code, is_playing = 0;
-FileReader sheet_reader;
+volatile uint8_t should_stop;
 
+// Tick, beat, and bar counting variables
 uint8_t can_count_beat;
 uint16_t tick_count, beat_counter, beat_count, bar_counter, bar_count;
 
-uint8_t should_stop;
+FileReader sheet_reader; // Current sheet
 
 void parse_music_code(char* music_code) {
     switch (music_code[0]) {
@@ -49,7 +56,7 @@ void parse_music_code(char* music_code) {
         }
         case PREFIX_TIME_SIGNATURE: {
             sscanf(music_code + 1, "%hhu/%hhu", &next_tsig_top, &next_tsig_bottom);
-            next_tsig_bottom = 32 / next_tsig_bottom;
+            next_tsig_bottom = PPQN * 4 / next_tsig_bottom;
             read_next_code = 1;
             break;
         }
@@ -57,9 +64,9 @@ void parse_music_code(char* music_code) {
             char* note_str = music_code;
             if (music_code[0] == PREFIX_FERMATA) {
                 note_str++;
-                fermata = 1;
+                next_fermata = 1;
             } else {
-                fermata = 0;
+                next_fermata = 0;
             }
 
             char note_char;
@@ -87,16 +94,15 @@ void music_init(uint8_t sheet_idx) {
     open_file(&sheet_reader, sheet_idx);
 
     // Reset all variables
-    is_playing = 0;
     tsig_top = 0, tsig_bottom = 0;
     next_octave = 0, next_tsig_top = 0, next_tsig_bottom = 0;
     ticks_play = 0, ticks_break = 0;
     next_ticks_play = 0, next_ticks_break = 0, next_note_per = 0, next_bpm_per = 0;
-    fermata = 0;
-    anacrusis_ticks = 0;
-    can_count_beat = 0;
-    beat_counter = 0, beat_count = 0, bar_counter = 0, bar_count = 0;
-    should_stop = 0;
+    fermata = 0, next_fermata = 0, anacrusis_ticks = 0;
+    is_playing = 0, should_stop = 0;
+    can_count_beat = 1;
+    tick_count = 0;
+    beat_counter = 0, beat_count = 0, bar_counter = 0, bar_count = 1;
 
     do {
         char word[10];
@@ -128,6 +134,8 @@ void music_init(uint8_t sheet_idx) {
 
 void music_play(void) {
     is_playing = 1;
+    display_num(1);
+    display_dp_sides(0, 1);
     tcb0_start();
 }
 
@@ -149,16 +157,53 @@ ISR(TCB0_INT_vect) {
         return;
     }
 
+    static uint8_t left_dp = 1, right_dp = 0;
+
+    // Calculate bars, beats and ticks
+    tick_count++;
+    if (can_count_beat) {
+        if (++beat_counter == tsig_bottom) {
+            beat_counter = 0;
+            beat_count++;
+            display_dp_sides(left_dp, right_dp);
+            left_dp = !left_dp;
+            right_dp = !right_dp;
+
+            if (++bar_counter == tsig_top) {
+                bar_counter = 0;
+                display_num(++bar_count);
+            }
+        }
+    }
+
+    // Alternate can and can't count in fermata
+    if (fermata && (ticks_play || ticks_break)) {
+        can_count_beat = !can_count_beat;
+    }
+
+    // Decrement anacrusis ticks
+    if (anacrusis_ticks && !--anacrusis_ticks) {
+        beat_counter = 0;
+        bar_counter = 0;
+        left_dp = 1;
+        right_dp = 0;
+        display_dp_sides(left_dp, right_dp);
+        display_num(++bar_count);
+    }
+
     // Process tick for current note
     if (ticks_play) {
-        if (!--ticks_play)
+        if (!--ticks_play && ticks_break)
             buzzer_silent();
     } else if (ticks_break) {
         ticks_break--;
     } else {
+        // Ticks for next note
         ticks_play = next_ticks_play;
         ticks_break = next_ticks_break;
+        fermata = next_fermata;
         read_next_code = 1;
+
         if (next_note_per) {
             buzzer_note(next_note_per, next_octave);
         } else {
@@ -183,28 +228,6 @@ ISR(TCB0_INT_vect) {
             TCB0.INTFLAGS = TCB_CAPT_bm;
             return;
         }
-    }
-
-    // Calculate bars, beats and ticks
-    tick_count++;
-    if (can_count_beat) {
-        if (++beat_counter == tsig_bottom) {
-            beat_counter = 0;
-            beat_count++;
-
-            if (++bar_counter == tsig_top) {
-                bar_counter = 0;
-                bar_count++;
-            }
-        }
-    }
-
-    if (fermata)
-        can_count_beat = !can_count_beat;
-
-    if (anacrusis_ticks && !--anacrusis_ticks) {
-        beat_counter = 0;
-        bar_counter = 0;
     }
 
     TCB0.INTFLAGS = TCB_CAPT_bm; // Acknowledge interrupt

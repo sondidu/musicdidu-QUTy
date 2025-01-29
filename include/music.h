@@ -5,7 +5,7 @@
 #include "flash.h"
 
 extern volatile uint8_t read_next_code, is_playing;
-extern uint8_t should_stop;
+extern volatile uint8_t should_stop;
 extern FileReader sheet_reader;
 
 void parse_music_code(char* music_code);
