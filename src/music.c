@@ -27,7 +27,6 @@ volatile uint8_t read_next_code, is_playing = 0;
 volatile uint8_t should_stop;
 
 // Tick, beat, and bar counting variables
-uint8_t can_count_beat;
 uint16_t tick_count, beat_counter, beat_count, bar_counter, bar_count;
 
 FileReader sheet_reader; // Current sheet
@@ -100,9 +99,8 @@ void music_init(uint8_t sheet_idx) {
     next_ticks_play = 0, next_ticks_break = 0, next_note_per = 0, next_bpm_per = 0;
     fermata = 0, next_fermata = 0, anacrusis_ticks = 0;
     is_playing = 0, should_stop = 0;
-    can_count_beat = 1;
     tick_count = 0;
-    beat_counter = 0, beat_count = 0, bar_counter = 0, bar_count = 1;
+    beat_counter = 0, beat_count = 0, bar_counter = 0, bar_count = 0;
 
     do {
         char word[10];
@@ -118,11 +116,14 @@ void music_init(uint8_t sheet_idx) {
     if (next_tsig_top || next_tsig_bottom) {
         tsig_top = next_tsig_top;
         tsig_bottom = next_tsig_bottom;
+        next_tsig_top = 0;
+        next_tsig_bottom = 0;
     }
 
     // Handle bpm
     if (next_bpm_per) {
         tcb0_init(next_bpm_per);
+        next_bpm_per = 0;
     }
 
     // Handle notes
@@ -134,7 +135,7 @@ void music_init(uint8_t sheet_idx) {
 
 void music_play(void) {
     is_playing = 1;
-    display_num(1);
+    display_num(0);
     display_dp_sides(0, 1);
     tcb0_start();
 }
@@ -161,7 +162,7 @@ ISR(TCB0_INT_vect) {
 
     // Calculate bars, beats and ticks
     tick_count++;
-    if (can_count_beat) {
+    if (!fermata || (fermata && (tick_count & 1))) {
         if (++beat_counter == tsig_bottom) {
             beat_counter = 0;
             beat_count++;
@@ -174,11 +175,6 @@ ISR(TCB0_INT_vect) {
                 display_num(++bar_count);
             }
         }
-    }
-
-    // Alternate can and can't count in fermata
-    if (fermata && (ticks_play || ticks_break)) {
-        can_count_beat = !can_count_beat;
     }
 
     // Decrement anacrusis ticks
@@ -197,7 +193,9 @@ ISR(TCB0_INT_vect) {
             buzzer_silent();
     } else if (ticks_break) {
         ticks_break--;
-    } else {
+    }
+
+    if (!ticks_play && !ticks_break) {
         // Ticks for next note
         ticks_play = next_ticks_play;
         ticks_break = next_ticks_break;
