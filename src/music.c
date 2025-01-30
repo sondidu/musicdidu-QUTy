@@ -163,16 +163,24 @@ ISR(TCB0_INT_vect) {
     // Calculate bars, beats and ticks
     tick_count++;
     if (!fermata || (fermata && (tick_count & 1))) {
-        if (++beat_counter == tsig_bottom) {
-            beat_counter = 0;
+        // Increment beat at 0
+        if (beat_counter == 0) {
             beat_count++;
             display_dp_sides(left_dp, right_dp);
             left_dp = !left_dp;
             right_dp = !right_dp;
 
+            // Increment bar at 0
+            if (bar_counter == 0) {
+                display_num(++bar_count);
+            }
+        }
+
+        if (++beat_counter == tsig_bottom) {
+            beat_counter = 0;
+
             if (++bar_counter == tsig_top) {
                 bar_counter = 0;
-                display_num(++bar_count);
             }
         }
     }
