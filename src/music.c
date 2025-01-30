@@ -160,6 +160,14 @@ ISR(TCB0_INT_vect) {
 
     static uint8_t left_dp = 1, right_dp = 0;
 
+    // Decrement anacrusis ticks
+    if (anacrusis_ticks && !--anacrusis_ticks) {
+        beat_counter = 0;
+        bar_counter = 0;
+        left_dp = 1;
+        right_dp = 0;
+    }
+
     // Calculate bars, beats and ticks
     tick_count++;
     if (!fermata || (fermata && (tick_count & 1))) {
@@ -183,16 +191,6 @@ ISR(TCB0_INT_vect) {
                 bar_counter = 0;
             }
         }
-    }
-
-    // Decrement anacrusis ticks
-    if (anacrusis_ticks && !--anacrusis_ticks) {
-        beat_counter = 0;
-        bar_counter = 0;
-        left_dp = 1;
-        right_dp = 0;
-        display_dp_sides(left_dp, right_dp);
-        display_num(++bar_count);
     }
 
     // Process tick for current note
