@@ -116,6 +116,7 @@ void music_init(uint8_t sheet_idx) {
     if (next_tsig_top || next_tsig_bottom) {
         tsig_top = next_tsig_top;
         tsig_bottom = next_tsig_bottom;
+        bar_counter = tsig_top - 1;
         next_tsig_top = 0;
         next_tsig_bottom = 0;
     }
@@ -163,9 +164,11 @@ ISR(TCB0_INT_vect) {
     // Decrement anacrusis ticks
     if (anacrusis_ticks && !--anacrusis_ticks) {
         beat_counter = 0;
-        bar_counter = 0;
+        bar_counter = tsig_top - 1;
         left_dp = 1;
         right_dp = 0;
+        display_dp_sides(left_dp, right_dp);
+        display_num(++bar_count);
     }
 
     // Calculate bars, beats and ticks
