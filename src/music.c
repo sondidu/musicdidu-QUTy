@@ -49,6 +49,7 @@ void parse_music_code(char* music_code) {
         }
         case PREFIX_BREAK: {
             sscanf(music_code + 1, "%u", &next_ticks_break);
+            next_ticks_play = 0;
             next_note_per = 0;
             read_next_code = 0;
             break;
@@ -116,7 +117,6 @@ void music_init(uint8_t sheet_idx) {
     if (next_tsig_top || next_tsig_bottom) {
         tsig_top = next_tsig_top;
         tsig_bottom = next_tsig_bottom;
-        bar_counter = tsig_top - 1;
         next_tsig_top = 0;
         next_tsig_bottom = 0;
     }
@@ -125,12 +125,6 @@ void music_init(uint8_t sheet_idx) {
     if (next_bpm_per) {
         tcb0_init(next_bpm_per);
         next_bpm_per = 0;
-    }
-
-    // Handle notes
-    if (next_ticks_play || next_ticks_break) {
-        ticks_play = next_ticks_play;
-        ticks_break = next_ticks_break;
     }
 }
 
@@ -164,11 +158,9 @@ ISR(TCB0_INT_vect) {
     // Decrement anacrusis ticks
     if (anacrusis_ticks && !--anacrusis_ticks) {
         beat_counter = 0;
-        bar_counter = tsig_top - 1;
+        bar_counter = 0;
         left_dp = 1;
         right_dp = 0;
-        display_dp_sides(left_dp, right_dp);
-        display_num(++bar_count);
     }
 
     // Calculate bars, beats and ticks
