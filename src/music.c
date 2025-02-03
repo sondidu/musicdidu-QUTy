@@ -31,6 +31,13 @@ uint16_t tick_count, beat_counter, beat_count, bar_counter, bar_count;
 
 FileReader sheet_reader; // Current sheet
 
+/**
+ * Parses a given music code string.
+ * Music code is formatted to be either a note,
+ * fermata-note, break, bpm, time signature, or
+ * anacrusis.
+ * @param music_code The music code string.
+ */
 void parse_music_code(char* music_code) {
     switch (music_code[0]) {
         case PREFIX_ANACRUSIS: {
@@ -89,6 +96,11 @@ void parse_music_code(char* music_code) {
     }
 }
 
+/**
+ * Initializes music before playing, given a sheet index.
+ *
+ * @param sheet_idx Index of `available_files` in `data.c`.
+ */
 void music_init(uint8_t sheet_idx) {
     reader_init(&sheet_reader);
     open_file(&sheet_reader, sheet_idx);
@@ -128,6 +140,10 @@ void music_init(uint8_t sheet_idx) {
     }
 }
 
+/**
+ * Plays music.
+ *
+ */
 void music_play(void) {
     is_playing = 1;
     display_num(0);
@@ -135,17 +151,31 @@ void music_play(void) {
     tcb0_start();
 }
 
+/**
+ * Pauses music.
+ *
+ */
 void music_pause(void) {
     is_playing = 0;
     tcb0_stop();
 }
 
+/**
+ * Stops music.
+ * Closes the file, silences the buzzer.
+ *
+ */
 void music_stop(void) {
     music_pause();
     buzzer_silent();
     close_file(&sheet_reader);
 }
 
+/**
+ * ISR that handles music playing every tick.
+ * A tick is every 1/24th a beat.
+ *
+ */
 ISR(TCB0_INT_vect) {
     if (!is_playing) {
         // Exit early if not playing
