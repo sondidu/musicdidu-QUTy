@@ -16,6 +16,16 @@ def split_with_indices(s: str, sep=' '):
 
     return res
 
+def construct_error_msg(line_content: str, error_msg: str, pointer_idx: int):
+    constructed_msg = line_content + '\n'
+    if pointer_idx < len(error_msg) + 1: # +1 is accounting the space after the error message
+        pointer = pointer_idx * ' ' + '^'
+        constructed_msg += pointer + ' ' + error_msg
+    else:
+        constructed_msg += (pointer_idx - len(error_msg) - 1) * ' ' + error_msg + ' ^'
+
+    return constructed_msg
+
 def get_setting_info(setting_block: str, line_no=0, line_content='', setting_start_idx=0):
     content = setting_block.strip(SETTING_OPEN + SETTING_CLOSE)
     fields = split_with_indices(content, SEP_FIELD)
@@ -30,10 +40,10 @@ def get_setting_info(setting_block: str, line_no=0, line_content='', setting_sta
                 raise FieldError(field, f"Multiple instances of key '{key}'")
             settings_dict[key] = val
         except FieldError as error:
-            first_line = f"{line_content} at line {line_no}\n"
-            no_of_spaces = setting_start_idx + idx + len(field) - len(field_stripped) + 1 # Account the open enclosure and potential whitespaces in fields
-            pointer = no_of_spaces * ' ' + '^'
-            constructed_msg = first_line + pointer + ' ' + str(error)
+            first_line = f"{line_content} at line {line_no}"
+            pointer_idx = setting_start_idx + idx + len(field) - len(field_stripped) + 1 # Account the open enclosure and potential whitespaces in fields
+            constructed_msg = construct_error_msg(first_line, str(error), pointer_idx)
+
             errors.append(constructed_msg)
 
 
@@ -76,9 +86,9 @@ def get_bar_info(bar: str, tsig_top: int, tsig_bottom: int, slur_state: bool, an
                 beat_count += beats_obtained
                 note_count += 1
         except ElementError as error:
-            first_line = f"{line_content} at line {line_no}\n"
-            pointer = (bar_start_idx + idx + 1) * ' ' + '^' # The plus one is to account the open enclosure
-            constructed_msg = first_line + pointer + ' ' + str(error)
+            first_line = f"{line_content} at line {line_no}"
+            pointer_idx = bar_start_idx + idx + 1
+            constructed_msg = construct_error_msg(first_line, str(error), pointer_idx)
             errors.append(constructed_msg)
 
     if len(errors) != 0:
@@ -88,9 +98,8 @@ def get_bar_info(bar: str, tsig_top: int, tsig_bottom: int, slur_state: bool, an
         if not anacrusis:
             validate_bar_beats(beat_count, tsig_top, tsig_bottom)
     except BeatError as error:
-        first_line = f"{line_content} at line {line_no}\n"
-        pointer = (bar_start_idx) * ' ' + '^'
-        constructed_msg = first_line + pointer + ' ' + str(error)
+        first_line = f"{line_content} at line {line_no}"
+        constructed_msg = construct_error_msg(first_line, str(error), bar_start_idx)
         return [constructed_msg]
 
     return slur_state, beat_count, len(elements), note_count, break_count
