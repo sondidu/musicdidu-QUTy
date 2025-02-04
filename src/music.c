@@ -29,6 +29,9 @@ volatile uint8_t should_stop;
 // Tick, beat, and bar counting variables
 uint16_t tick_count, beat_counter, beat_count, bar_counter, bar_count;
 
+// Last playing note variables (for pause/play)
+uint16_t last_playing_per = 0, last_playing_cmp = 0;
+
 FileReader sheet_reader; // Current sheet
 
 /**
@@ -146,8 +149,15 @@ void music_init(uint8_t sheet_idx) {
  */
 void music_play(void) {
     is_playing = 1;
-    display_num(0);
-    display_dp_sides(0, 1);
+
+    // Replay last playing note if any
+    if (last_playing_per && last_playing_cmp) {
+        TCA0.SINGLE.PERBUF = last_playing_per;
+        TCA0.SINGLE.CMP0BUF = last_playing_cmp;
+        last_playing_per = 0;
+        last_playing_cmp = 0;
+    }
+
     tcb0_start();
 }
 
@@ -157,6 +167,12 @@ void music_play(void) {
  */
 void music_pause(void) {
     is_playing = 0;
+
+    // Save last playing note
+    last_playing_per = TCA0.SINGLE.PER;
+    last_playing_cmp = TCA0.SINGLE.CMP0;
+
+    buzzer_silent();
     tcb0_stop();
 }
 
