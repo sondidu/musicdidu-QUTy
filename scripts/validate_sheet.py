@@ -33,7 +33,6 @@ def get_setting_info(setting_block: str, line_no=0, line_content='', setting_sta
             first_line = f"{line_content} at line {line_no}\n"
             no_of_spaces = setting_start_idx + idx + len(field) - len(field_stripped) + 1 # Account the open enclosure and potential whitespaces in fields
             pointer = no_of_spaces * ' ' + '^'
-
             constructed_msg = first_line + pointer + ' ' + str(error)
             errors.append(constructed_msg)
 
@@ -79,7 +78,6 @@ def get_bar_info(bar: str, tsig_top: int, tsig_bottom: int, slur_state: bool, an
         except ElementError as error:
             first_line = f"{line_content} at line {line_no}\n"
             pointer = (bar_start_idx + idx + 1) * ' ' + '^' # The plus one is to account the open enclosure
-
             constructed_msg = first_line + pointer + ' ' + str(error)
             errors.append(constructed_msg)
 
@@ -91,7 +89,7 @@ def get_bar_info(bar: str, tsig_top: int, tsig_bottom: int, slur_state: bool, an
             validate_bar_beats(beat_count, tsig_top, tsig_bottom)
     except BeatError as error:
         first_line = f"{line_content} at line {line_no}\n"
-        pointer = '^'
+        pointer = (bar_start_idx) * ' ' + '^'
         constructed_msg = first_line + pointer + ' ' + str(error)
         return [constructed_msg]
 
