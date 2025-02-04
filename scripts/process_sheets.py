@@ -1,6 +1,7 @@
 from generate_music_code import generate_music_code
 from validate_sheet import validate_sheet
 import os
+import shutil
 import sys
 
 sheets_dir = 'sheets'
@@ -19,12 +20,19 @@ if (len(os.listdir(sheets_dir)) == 0):
     print("There should be at least one .txt file in the sheets/ directory.")
     sys.exit(1)
 
-validation_fail, validation_succeed = [], []
+# Prepare 'music code/' directory for new build
+if os.path.exists(music_code_dir):
+    shutil.rmtree(music_code_dir)
+os.makedirs(music_code_dir)
+
+
+files_failed, files_succeed = [], []
 available_files = []
 
 print('Validating Sheets'.center(50, '-'))
 print()
-for filename in os.listdir(sheets_dir):
+
+for filename in sorted(os.listdir(sheets_dir)):
     # Skip dirs and non-txt files
     if (os.path.isdir(filename) or not filename.endswith('.txt')):
         continue
@@ -37,7 +45,7 @@ for filename in os.listdir(sheets_dir):
 
         # Has errors
         if type(errors_or_sheet_info) == list:
-            validation_fail.append(filename)
+            files_failed.append(filename)
 
             print(f'{filename} errors:')
             for error in errors_or_sheet_info:
@@ -46,7 +54,7 @@ for filename in os.listdir(sheets_dir):
             continue
 
         # No errors
-        validation_succeed.append(filename)
+        files_succeed.append(filename)
 
         # Unpack and print
         block_count, bar_count, setting_count, beat_count, \
@@ -60,10 +68,11 @@ for filename in os.listdir(sheets_dir):
         print(f"- Total elements: {element_count}")
         print(f"   - Total notes: {note_count}")
         print(f"   - Total breaks: {break_count}")
+        print()
 
         # Generating music code file
-        print()
-        print(f"Generating music code for {filename}...")
+        # print()
+        # print(f"Generating music code for {filename}...")
 
         sheet_file.seek(0) # `process_sheet` iterates the entire file, thus need to reset pointer
         music_codes_per_line = generate_music_code(sheet_file)
@@ -72,16 +81,12 @@ for filename in os.listdir(sheets_dir):
         music_codes_per_line = [' '.join(music_codes) for music_codes in music_codes_per_line]
         music_codes_per_line = '\n'.join(music_codes_per_line)
 
-        # Directory may not exist
-        if not os.path.exists(music_code_dir):
-            os.makedirs(music_code_dir)
-
-        # Write music code to respective files in `music code/`
+        # Write music code to respective file in `music code/`
         output_music_code_path = os.path.join(music_code_dir, filename)
         with open(output_music_code_path, 'w') as music_code_file:
             music_code_file.writelines(music_codes_per_line)
-            print(f'\t{output_music_code_path} successfully created!')
-            print()
+            # print(f'\t{output_music_code_path} successfully created!')
+            # print()
 
         # Add C file content
         var_name = filename[:-4].replace('.', '_') + '_music_code' # Account for multiple '.' and '.txt'
@@ -90,18 +95,26 @@ for filename in os.listdir(sheets_dir):
         c_content_parts.append(f'const char {var_name}[] PROGMEM = "{music_code_content}";\n')
         available_files.append((f'{var_name}', var_name, f'sizeof({var_name})'))
 
+# Print validation summary
 print('Validation Summary'.center(50, '-'))
 
-if validation_succeed:
-    print('Succeed: ' + ', '.join(validation_succeed))
+if files_succeed and len(files_failed) == 0:
+    print('All sheet(s) successfully validated:')
+    for file_num, filename in enumerate(files_succeed, start=1):
+        print(f"{file_num}. {filename}")
+    print(f'See the `{music_code_dir}` directory to see their respective music codes.')
 
-if validation_fail:
-    print('Failed: ' + ', '.join(validation_fail))
+if files_failed:
+    print('Failed sheet(s):')
+    for file_num, filename in enumerate(files_failed, start=1):
+        print(f"{file_num}. {filename}")
+
     print()
     print('Some files still have errors.')
     print(f'{output_c_file} is not generated.')
     sys.exit(1)
 
+# Append rest of C file content
 c_content_parts.append('const FlashFile available_files[] = {\n')
 
 for var_name, base_name, size in available_files:
@@ -110,9 +123,11 @@ for var_name, base_name, size in available_files:
 c_content_parts.append('};\n')
 c_content_parts.append('const uint8_t available_files_count = sizeof(available_files) / sizeof(FlashFile);\n')
 
+# Write file
 with open(output_c_file, 'w') as file:
     c_file_content = ''.join(c_content_parts)
     file.write(c_file_content)
 
 print()
 print(f'{output_c_file} is generated successfully.')
+print()
