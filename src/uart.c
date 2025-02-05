@@ -1,5 +1,4 @@
 #include <avr/io.h>
-#include <avr/interrupt.h>
 #include <stdio.h>
 #include "uart.h"
 
@@ -19,8 +18,7 @@ int uart_write(char c, FILE *stream) {
 }
 
 /**
- * Initialises USART to 9600-8-N-1, redirects stdout and triggers an
- * interrupt for every complete reception.
+ * Initialises USART to 9600-8-N-1 and redirects stdout.
  *
  * @warning Enables UART TX (PB2) as output, UART RX (PB3) as input.
  */
@@ -29,11 +27,5 @@ void uart_init(void) {
     PORTB.DIRCLR = PIN3_bm;
     USART0.BAUD = 1389;
     USART0.CTRLB = USART_TXEN_bm | USART_RXEN_bm;
-    USART0.CTRLA = USART_RXCIE_bm;
     stdout = &stdout_redirected;
-}
-
-ISR(USART0_RXC_vect) {
-    char c = USART0.RXDATAL; // Acknowledge interrupt
-    // For later...
 }
