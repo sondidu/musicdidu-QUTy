@@ -25,16 +25,34 @@ if os.path.exists(music_code_dir):
     shutil.rmtree(music_code_dir)
 os.makedirs(music_code_dir)
 
-
 files_failed, files_succeed = [], []
-available_files = []
+available_files = [] # Store variable name, base name, size of each file
 
+# Parse whitelist
+whitelist_path = os.path.join(sheets_dir, 'whitelist')
+whitelist_exists = os.path.exists(whitelist_path)
+whitelist_files = []
+if whitelist_exists:
+    print('Whitelist file detected!')
+    with open(whitelist_path, 'r') as whitelist_file:
+        whitelist_files = [line.strip() for line in whitelist_file if line.strip()]
+
+    # Build error if whitelist is empty
+    if len(whitelist_files) == 0:
+        print('There should be at least one filename in whitelist')
+        sys.exit(1)
+
+# Begin validation
 print('Validating Sheets'.center(50, '-'))
 print()
 
 for filename in sorted(os.listdir(sheets_dir)):
     # Skip dirs and non-txt files
     if (os.path.isdir(filename) or not filename.endswith('.txt')):
+        continue
+
+    # Skip if not in whitelist
+    if whitelist_exists and filename.removesuffix('.txt') not in whitelist_files:
         continue
 
     # Start validating
