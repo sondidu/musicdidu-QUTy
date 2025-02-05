@@ -26,7 +26,7 @@ if os.path.exists(music_code_dir):
 os.makedirs(music_code_dir)
 
 files_failed, files_succeed = [], []
-available_files = [] # Store variable name, base name, size of each file
+available_file_infos = [] # Store variable name, base name, size of each file
 
 # Parse whitelist
 whitelist_path = os.path.join(sheets_dir, 'whitelist')
@@ -39,8 +39,16 @@ if whitelist_exists:
 
     # Build error if whitelist is empty
     if len(whitelist_files) == 0:
-        print('There should be at least one filename in whitelist')
+        print('There should be at least one filename in whitelist.')
         sys.exit(1)
+
+    # Build error if none of filenames in whitelist exist in the actual directory
+    available_files = [filename.removesuffix('.txt') for filename in os.listdir(sheets_dir)]
+    available_files.remove('whitelist') # Remove whitelist itself
+    if not (set(whitelist_files) & set(available_files)):
+        print('There should be at least one filename in whitelist that matches in the sheets/ directory.')
+        sys.exit(1)
+
 
 # Begin validation
 print('Validating Sheets'.center(50, '-'))
@@ -111,7 +119,7 @@ for filename in sorted(os.listdir(sheets_dir)):
         music_code_content = ''.join(music_codes_per_line).replace('\n', '\\n')
 
         c_content_parts.append(f'const char {var_name}[] PROGMEM = "{music_code_content}";\n')
-        available_files.append((f'{var_name}', var_name, f'sizeof({var_name})'))
+        available_file_infos.append((f'{var_name}', var_name, f'sizeof({var_name})'))
 
 # Print validation summary
 print('Validation Summary'.center(50, '-'))
@@ -135,7 +143,7 @@ if files_failed:
 # Append rest of C file content
 c_content_parts.append('const FlashFile available_files[] = {\n')
 
-for var_name, base_name, size in available_files:
+for var_name, base_name, size in available_file_infos:
     c_content_parts.append(f'    {{{var_name}, "{base_name}", {size}}},\n')
 
 c_content_parts.append('};\n')
