@@ -79,13 +79,15 @@ def generate_music_code(file: TextIO):
             if char == BAR_CLOSE:
                 # Processing bar
 
+                bar = line[block_start_idx:char_idx] # Extract bar
+                music_codes_from_bar, slur_state, bar_ticks = bar_to_music_codes(bar, slur_state)
+
                 # Skip bars if needed
                 if skip_bars > 0:
                     skip_bars -= 1
+                    is_anacrusis = False # Overwrite anacrusis
+                    block_start_idx = char_idx + 1 # Reset for next block
                     continue
-
-                bar = line[block_start_idx:char_idx] # Extract bar
-                music_codes_from_bar, slur_state, bar_ticks = bar_to_music_codes(bar, slur_state)
 
                 # Account anacrusis
                 if is_anacrusis:
