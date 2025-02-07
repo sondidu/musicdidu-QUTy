@@ -41,4 +41,7 @@
 
 #define NOTE_CHAR_START ':'
 
+#define DP_INITIAL_VAL_LEFT 1
+#define DP_INITIAL_VAL_RIGHT 0
+
 #endif

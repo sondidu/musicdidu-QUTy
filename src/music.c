@@ -10,8 +10,8 @@
 #include "timers.h"
 
 // Time signature variables
-uint8_t tsig_top, tsig_bottom;
-uint8_t next_octave, next_tsig_top, next_tsig_bottom;
+uint8_t beats_per_bar, ticks_per_beat;
+uint8_t next_octave, next_beats_per_bar, next_ticks_per_beat;
 
 // Tick-playing variables
 uint16_t ticks_play, ticks_break;
@@ -28,6 +28,9 @@ volatile uint8_t should_stop;
 
 // Tick, beat, and bar counting variables
 uint16_t tick_count, beat_counter, beat_count, bar_counter, bar_count;
+
+// Decimal Point variables
+static uint8_t dp_left, dp_right;
 
 // Last playing note variables (for pause/play)
 uint16_t last_playing_per = 0, last_playing_cmp = 0;
@@ -65,8 +68,8 @@ void parse_music_code(char* music_code) {
             break;
         }
         case PREFIX_TIME_SIGNATURE: {
-            sscanf(music_code + 1, "%hhu/%hhu", &next_tsig_top, &next_tsig_bottom);
-            next_tsig_bottom = PPQN * 4 / next_tsig_bottom;
+            sscanf(music_code + 1, "%hhu/%hhu", &next_beats_per_bar, &next_ticks_per_beat);
+            next_ticks_per_beat = PPQN * 4 / next_ticks_per_beat; // Converting to ticks
             read_next_code = 1;
             break;
         }
@@ -109,14 +112,15 @@ void music_init(uint8_t sheet_idx) {
     open_file(&sheet_reader, sheet_idx);
 
     // Reset all variables
-    tsig_top = 0, tsig_bottom = 0;
-    next_octave = 0, next_tsig_top = 0, next_tsig_bottom = 0;
+    beats_per_bar = 0, ticks_per_beat = 0;
+    next_octave = 0, next_beats_per_bar = 0, next_ticks_per_beat = 0;
     ticks_play = 0, ticks_break = 0;
     next_ticks_play = 0, next_ticks_break = 0, next_note_per = 0, next_bpm_per = 0;
     fermata = 0, next_fermata = 0, anacrusis_ticks = 0;
     is_playing = 0, should_stop = 0;
     tick_count = 0;
     beat_counter = 0, beat_count = 0, bar_counter = 0, bar_count = 0;
+    dp_left = DP_INITIAL_VAL_LEFT, dp_right = DP_INITIAL_VAL_RIGHT;
 
     do {
         char word[10];
@@ -129,11 +133,11 @@ void music_init(uint8_t sheet_idx) {
     } while (read_next_code);
 
     // Handle time signature
-    if (next_tsig_top || next_tsig_bottom) {
-        tsig_top = next_tsig_top;
-        tsig_bottom = next_tsig_bottom;
-        next_tsig_top = 0;
-        next_tsig_bottom = 0;
+    if (next_beats_per_bar || next_ticks_per_beat) {
+        beats_per_bar = next_beats_per_bar;
+        ticks_per_beat = next_ticks_per_beat;
+        next_beats_per_bar = 0;
+        next_ticks_per_beat = 0;
     }
 
     // Handle bpm
@@ -199,14 +203,12 @@ ISR(TCB0_INT_vect) {
         return;
     }
 
-    static uint8_t left_dp = 1, right_dp = 0;
-
     // Decrement anacrusis ticks
     if (anacrusis_ticks && !--anacrusis_ticks) {
         beat_counter = 0;
         bar_counter = 0;
-        left_dp = 1;
-        right_dp = 0;
+        dp_left = DP_INITIAL_VAL_LEFT;
+        dp_right = DP_INITIAL_VAL_RIGHT;
     }
 
     // Calculate bars, beats and ticks
@@ -215,21 +217,29 @@ ISR(TCB0_INT_vect) {
         // Increment beat at 0
         if (beat_counter == 0) {
             beat_count++;
-            display_dp_sides(left_dp, right_dp);
-            left_dp = !left_dp;
-            right_dp = !right_dp;
+            display_dp_sides(dp_left, dp_right);
+            dp_left = !dp_left;
+            dp_right = !dp_right;
 
             // Increment bar at 0
             if (bar_counter == 0) {
                 display_num(++bar_count);
             }
+        } else if (beat_counter == (ticks_per_beat >> 1)) {
+            // Turn off DP once half a beat passes
+            display_dp_sides(0, 0);
         }
 
-        if (++beat_counter == tsig_bottom) {
+        // Cycle respective counters
+        if (++beat_counter == ticks_per_beat) {
             beat_counter = 0;
 
-            if (++bar_counter == tsig_top) {
+            if (++bar_counter == beats_per_bar) {
                 bar_counter = 0;
+
+                // Reset DP variables to begin next bar
+                dp_left = DP_INITIAL_VAL_LEFT;
+                dp_right = DP_INITIAL_VAL_RIGHT;
             }
         }
     }
@@ -262,10 +272,10 @@ ISR(TCB0_INT_vect) {
             next_bpm_per = 0;
         }
 
-        if (next_tsig_top || next_tsig_bottom) {
-            tsig_top = next_tsig_top;
-            tsig_bottom = next_tsig_bottom;
-            next_tsig_top = next_tsig_bottom = 0;
+        if (next_beats_per_bar || next_ticks_per_beat) {
+            beats_per_bar = next_beats_per_bar;
+            ticks_per_beat = next_ticks_per_beat;
+            next_beats_per_bar = next_ticks_per_beat = 0;
         }
 
         if (should_stop) {
