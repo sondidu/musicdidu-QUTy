@@ -116,7 +116,7 @@ for filename in sorted(os.listdir(sheets_dir)):
             # print()
 
         # Add C file content
-        var_name = filename[:-4].replace('.', '_') + '_music_code' # Account for multiple '.' and '.txt'
+        var_name = filename.removesuffix('.txt').replace('.', '_').replace(' ', '_') + '_music_code' # Account for filenames with spaces and '.'s
         music_code_content = ''.join(music_codes_per_line).replace('\n', '\\n')
 
         c_content_parts.append(f'const char {var_name}[] PROGMEM = "{music_code_content}";\n')
