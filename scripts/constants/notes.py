@@ -5,10 +5,10 @@ ADDITIONAL_SLUR_BEGIN = '<'
 ADDITIONAL_SLUR_END = '>'
 ADDITIONAL_STACCATO = 's'
 
-# Break constants
-BREAK_SYM = '*'
-BREAK_ELM_EXPLEN = 2
-BREAK_ELM_SEP = '-'
+# Rest constants
+REST_SYM = '*'
+REST_ELM_EXPLEN = 2
+REST_ELM_SEP = '-'
 
 # Duration constants
 DURATION_WHOLE = 1

@@ -35,7 +35,7 @@
 
 #define PREFIX_ANACRUSIS 'a'
 #define PREFIX_BPM 'b'
-#define PREFIX_BREAK '*'
+#define PREFIX_REST '*'
 #define PREFIX_FERMATA 'f'
 #define PREFIX_TIME_SIGNATURE 't'
 

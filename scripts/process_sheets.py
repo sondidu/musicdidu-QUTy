@@ -84,7 +84,7 @@ for filename in sorted(os.listdir(sheets_dir)):
 
         # Unpack and print
         block_count, bar_count, setting_count, beat_count, \
-            element_count, note_count, break_count = errors_or_sheet_info
+            element_count, note_count, rest_count = errors_or_sheet_info
 
         print(f"Validating {filename} is complete! Here are its info:")
         print(f"- Block count: {block_count}")
@@ -93,7 +93,7 @@ for filename in sorted(os.listdir(sheets_dir)):
         print(f"- Total beats: {beat_count}")
         print(f"- Total elements: {element_count}")
         print(f"   - Total notes: {note_count}")
-        print(f"   - Total breaks: {break_count}")
+        print(f"   - Total rests: {rest_count}")
         print()
 
         # Generating music code file

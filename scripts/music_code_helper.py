@@ -1,5 +1,5 @@
 from custom_errors import ElementError
-from bar_helper import get_break_info, get_note_info, get_tuplet_info
+from bar_helper import get_rest_info, get_note_info, get_tuplet_info
 from constants.music_code import *
 from constants.notes import *
 
@@ -28,9 +28,9 @@ def create_music_code_from_note(note: str, total_ticks: int, additionals: str, s
     else:
         ticks_played = round(total_ticks * (ARTICULATION_STACCATO if ADDITIONAL_STACCATO in additionals else ARTICULATION_REGULAR))
 
-    ticks_break = total_ticks - ticks_played
+    ticks_rest = total_ticks - ticks_played
 
-    music_code = f"{ticks_played}{note_char}{octave}{ticks_break}"
+    music_code = f"{ticks_played}{note_char}{octave}{ticks_rest}"
     if ADDITIONAL_FERMATA in additionals:
         # Account for fermatas
         music_code = PREFIX_FERMATA + music_code
@@ -48,16 +48,16 @@ def note_to_music_code(note_element: str, slur_state: bool):
     music_code = create_music_code_from_note(note, total_ticks, additionals, new_slur_state)
     return music_code, new_slur_state, total_ticks
 
-def break_to_music_code(break_element: str):
+def rest_to_music_code(rest_element: str):
     try:
-        duration_in_32nd = get_break_info(break_element)
+        duration_in_32nd = get_rest_info(rest_element)
     except ElementError:
-        print('Error when converting a break to music code.')
+        print('Error when converting a rest to music code.')
         raise
 
     total_ticks = duration_in_32nd * TICKS_THIRTYSECOND
 
-    return f"{PREFIX_BREAK}{total_ticks}", total_ticks
+    return f"{PREFIX_REST}{total_ticks}", total_ticks
 
 def tuplet_to_music_codes(tuplet: str, slur_state: bool):
     try:
@@ -93,8 +93,8 @@ def tuplet_to_music_codes(tuplet: str, slur_state: bool):
 
     for element, element_ticks in zip(elements, elements_ticks):
         element_sym, *other_info = element
-        if element_sym == BREAK_SYM:
-            music_codes.append(f"{BREAK_SYM}{element_ticks}")
+        if element_sym == REST_SYM:
+            music_codes.append(f"{REST_SYM}{element_ticks}")
         else:
             duration_in_32nd, additionals = other_info
 

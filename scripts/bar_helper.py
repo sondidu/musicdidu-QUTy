@@ -70,24 +70,24 @@ def get_note_info(note_element: str, slur_state: bool):
 
     return note, duration_in_32nd, additionals, slur_state
 
-def get_break_info(break_element: str):
-    parts = break_element.split(BREAK_ELM_SEP)
+def get_rest_info(rest_element: str):
+    parts = rest_element.split(REST_ELM_SEP)
 
-    if len(parts) != BREAK_ELM_EXPLEN:
-        raise ElementError(break_element, f"Unexpected number of parts '{BREAK_ELM_SEP}'")
+    if len(parts) != REST_ELM_EXPLEN:
+        raise ElementError(rest_element, f"Unexpected number of parts '{REST_ELM_SEP}'")
 
-    break_char, duration = parts
+    rest_char, duration = parts
 
     # Unlikely to happen
-    if break_char != BREAK_SYM:
-        raise ElementError(break_element, "Not a break element")
+    if rest_char != REST_SYM:
+        raise ElementError(rest_element, "Not a rest element")
 
     # Check duration
     if not duration.isnumeric():
-        raise ElementError(break_element, f"Duration must be a number")
+        raise ElementError(rest_element, f"Duration must be a number")
 
     if int(duration) not in VALID_DURATIONS:
-        raise ElementError(break_element, f"Duration must either be {', '.join(str(num) for num in VALID_DURATIONS)}")
+        raise ElementError(rest_element, f"Duration must either be {', '.join(str(num) for num in VALID_DURATIONS)}")
 
     return duration_to_32nd(int(duration))
 
@@ -134,10 +134,10 @@ def get_tuplet_info(tuplet: str, slur_state: bool):
     tuplet_elements_parsed = []
     tuplet_elements = tuplet[tuplet_open_idx + 1:-1].split(TUPLET_SEP_NOTE)
     for tuplet_element in tuplet_elements:
-        if tuplet_element[0] == BREAK_SYM:
-            relative_duration = get_break_info(tuplet_element)
+        if tuplet_element[0] == REST_SYM:
+            relative_duration = get_rest_info(tuplet_element)
             actual_tuplet_beat_count += relative_duration
-            tuplet_elements_parsed.append((BREAK_SYM, relative_duration))
+            tuplet_elements_parsed.append((REST_SYM, relative_duration))
         else:
             note, relative_duration, additionals, slur_state = get_note_info(tuplet_element, slur_state)
             actual_tuplet_beat_count += relative_duration

@@ -1,6 +1,6 @@
-from bar_helper import get_break_info, get_note_info, get_tuplet_info, validate_bar_beats
+from bar_helper import get_rest_info, get_note_info, get_tuplet_info, validate_bar_beats
 from constants.block_enclosures import BAR_CLOSE, BAR_OPEN, SETTING_CLOSE, SETTING_OPEN
-from constants.notes import BREAK_SYM, ELEMENT_SEP, TUPLET_CLOSE
+from constants.notes import REST_SYM, ELEMENT_SEP, TUPLET_CLOSE
 from constants.setting_fields import KEY_ANACRUSIS, KEY_BPM, KEY_TIMESIG, SEP_FIELD
 from custom_errors import BeatError, BlockEnclosureError, ElementError, FieldError
 from typing import TextIO
@@ -56,7 +56,7 @@ def get_bar_info(bar: str, tsig_top: int, tsig_bottom: int, slur_state: bool, an
     content = bar.strip(BAR_OPEN + BAR_CLOSE)
     elements = split_with_indices(content, ELEMENT_SEP)
 
-    beat_count, note_count, break_count = 0, 0, 0
+    beat_count, note_count, rest_count = 0, 0, 0
     errors = []
     for idx, element in elements:
         try:
@@ -67,19 +67,19 @@ def get_bar_info(bar: str, tsig_top: int, tsig_bottom: int, slur_state: bool, an
             elif element[-1] == TUPLET_CLOSE:
                 tuplet_definition, tuplet_elements, beats_obtained, slur_state = get_tuplet_info(element, slur_state)
 
-                # Count notes and breaks
+                # Count notes and rests
                 for symbol, *other_element_info in tuplet_elements:
-                    if symbol == BREAK_SYM:
-                        break_count += 1
+                    if symbol == REST_SYM:
+                        rest_count += 1
                     else:
                         note_count += 1
 
                 beat_count += beats_obtained
 
-            # Breaks
-            elif element[0] == BREAK_SYM:
-                beat_count += get_break_info(element)
-                break_count += 1
+            # Rests
+            elif element[0] == REST_SYM:
+                beat_count += get_rest_info(element)
+                rest_count += 1
             # Notes
             else:
                 note, beats_obtained, additionals, slur_state = get_note_info(element, slur_state)
@@ -102,7 +102,7 @@ def get_bar_info(bar: str, tsig_top: int, tsig_bottom: int, slur_state: bool, an
         constructed_msg = construct_error_msg(first_line, str(error), bar_start_idx)
         return [constructed_msg]
 
-    return slur_state, beat_count, len(elements), note_count, break_count
+    return slur_state, beat_count, len(elements), note_count, rest_count
 
 def validate_sheet(file: TextIO):
     open_enclosure_pairs = {
@@ -116,7 +116,7 @@ def validate_sheet(file: TextIO):
     beat_count = 0
     element_count = 0
     note_count = 0
-    break_count = 0
+    rest_count = 0
 
     tsig_top = None
     tsig_bottom = None
@@ -181,14 +181,14 @@ def validate_sheet(file: TextIO):
                     errors.extend(bar_info_or_errors)
                 else:
                     # Unpacking bar info
-                    new_slur_state, beats_accumulated, elements_accumulated, notes_accumulated, breaks_accumulated = bar_info_or_errors
+                    new_slur_state, beats_accumulated, elements_accumulated, notes_accumulated, rests_accumulated = bar_info_or_errors
 
                     # Update relevant info
                     slur_state = new_slur_state
                     beat_count += beats_accumulated
                     element_count += elements_accumulated
                     note_count += notes_accumulated
-                    break_count += breaks_accumulated
+                    rest_count += rests_accumulated
             else:
                 # Process setting block
 
@@ -222,4 +222,4 @@ def validate_sheet(file: TextIO):
         return errors
 
     block_count = bar_count + setting_count
-    return block_count, bar_count, setting_count, beat_count, element_count, note_count, break_count
+    return block_count, bar_count, setting_count, beat_count, element_count, note_count, rest_count

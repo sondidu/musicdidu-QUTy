@@ -1,8 +1,8 @@
-from music_code_helper import break_to_music_code,note_to_music_code, tuplet_to_music_codes
+from music_code_helper import rest_to_music_code,note_to_music_code, tuplet_to_music_codes
 from constants.block_enclosures import *
 from constants.setting_fields import ANACRUSIS_VAL_TRUE, KEY_ANACRUSIS, KEY_BPM, KEY_SKIPBARS, KEY_TIMESIG, SEP_VAL_TIMESIG, SEP_FIELD
 from constants.music_code import PREFIX_ANACRUSIS, PREFIX_BPM, PREFIX_TIMESIG
-from constants.notes import BREAK_SYM, ELEMENT_SEP, TUPLET_CLOSE
+from constants.notes import REST_SYM, ELEMENT_SEP, TUPLET_CLOSE
 from setting_block_helper import field_to_key_val
 from typing import TextIO
 
@@ -15,10 +15,10 @@ def bar_to_music_codes(bar_content: str, slur_state: bool):
         if element == '':
             continue
 
-        if element[0] == BREAK_SYM:
-            note_music_code, break_ticks = break_to_music_code(element)
+        if element[0] == REST_SYM:
+            note_music_code, rest_ticks = rest_to_music_code(element)
 
-            bar_ticks += break_ticks
+            bar_ticks += rest_ticks
             music_codes.append(note_music_code)
         elif element[-1] == TUPLET_CLOSE:
             tuplet_music_codes, slur_state, note_ticks = tuplet_to_music_codes(element, slur_state)

@@ -14,8 +14,8 @@ uint8_t beats_per_bar, ticks_per_beat;
 uint8_t next_octave, next_beats_per_bar, next_ticks_per_beat;
 
 // Tick-playing variables
-uint16_t ticks_play, ticks_break;
-uint16_t next_ticks_play, next_ticks_break, next_note_per, next_bpm_per;
+uint16_t ticks_play, ticks_rest;
+uint16_t next_ticks_play, next_ticks_rest, next_note_per, next_bpm_per;
 
 // Fermata and anacrusis
 uint8_t next_fermata;
@@ -40,7 +40,7 @@ FileReader sheet_reader; // Current sheet
 /**
  * Parses a given music code string.
  * Music code is formatted to be either a note,
- * fermata-note, break, bpm, time signature, or
+ * fermata-note, rest, bpm, time signature, or
  * anacrusis.
  * @param music_code The music code string.
  */
@@ -60,8 +60,8 @@ void parse_music_code(char* music_code) {
             read_next_code = 1;
             break;
         }
-        case PREFIX_BREAK: {
-            sscanf(music_code + 1, "%u", &next_ticks_break);
+        case PREFIX_REST: {
+            sscanf(music_code + 1, "%u", &next_ticks_rest);
             next_ticks_play = 0;
             next_note_per = 0;
             read_next_code = 0;
@@ -83,7 +83,7 @@ void parse_music_code(char* music_code) {
             }
 
             char note_char;
-            sscanf(note_str, "%u%c%1hhu%u", &next_ticks_play, &note_char, &next_octave, &next_ticks_break);
+            sscanf(note_str, "%u%c%1hhu%u", &next_ticks_play, &note_char, &next_octave, &next_ticks_rest);
 
             static const uint16_t note_pers[] = {
                 NOTE_PER_A, NOTE_PER_A_SHARP, NOTE_PER_A_FLAT,
@@ -114,8 +114,8 @@ void music_init(uint8_t sheet_idx) {
     // Reset all variables
     beats_per_bar = 0, ticks_per_beat = 0;
     next_octave = 0, next_beats_per_bar = 0, next_ticks_per_beat = 0;
-    ticks_play = 0, ticks_break = 0;
-    next_ticks_play = 0, next_ticks_break = 0, next_note_per = 0, next_bpm_per = 0;
+    ticks_play = 0, ticks_rest = 0;
+    next_ticks_play = 0, next_ticks_rest = 0, next_note_per = 0, next_bpm_per = 0;
     fermata = 0, next_fermata = 0, anacrusis_ticks = 0;
     is_playing = 0, should_stop = 0;
     tick_count = 0;
@@ -246,16 +246,16 @@ ISR(TCB0_INT_vect) {
 
     // Process tick for current note
     if (ticks_play) {
-        if (!--ticks_play && ticks_break)
+        if (!--ticks_play && ticks_rest)
             buzzer_silent();
-    } else if (ticks_break) {
-        ticks_break--;
+    } else if (ticks_rest) {
+        ticks_rest--;
     }
 
-    if (!ticks_play && !ticks_break) {
+    if (!ticks_play && !ticks_rest) {
         // Ticks for next note
         ticks_play = next_ticks_play;
-        ticks_break = next_ticks_break;
+        ticks_rest = next_ticks_rest;
         fermata = next_fermata;
         read_next_code = 1;
 
