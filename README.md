@@ -1,4 +1,4 @@
-# musicdidu-QUTY
+# musicdidu-QUTy
 
 A music player program designed for the [QUTy](https://cab202.github.io/quty/). You can create your own music by creating `.txt` files following a set of rules, and the board will play it for you! This project involves text validation through Python, custom code generation, and C code to play the music itself.
 

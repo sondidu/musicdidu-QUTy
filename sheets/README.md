@@ -3,7 +3,7 @@
 This directory contains music sheet files in `.txt` format. Each file represents a different piece of music that can be played by the [QUTy](https://cab202.github.io/quty/) board.
 
 ## Validation Rules and Creating Your Own Sheets
-Each sheet is a `.txt` file that must follow a set of rules to build successfully. Each sheet must contain **blocks**, which can be either a **setting block** or a **bar** (in this context, 'bar' refers to actual bars in music theory).
+Each sheet is a `.txt` file that must follow a set of rules to build successfully. Each sheet must contain **blocks**, which can be either a **setting block** or a **bar** (in this context, 'bar' refers to actual bars in music theory). Music knowledge isn't mandatory but will definitely help 😄.
 
 ### Setting Block
 A **setting block** follows JSON's syntax closely. It is text enclosed with curly brackets `{}` with **setting fields** separated by a commas `,`, but must all be in a single line. **Setting fields** are case-sensitive and are key-value pairs separated by an equal sign `=`. These are the valid key-value pairs of a **setting field**:
