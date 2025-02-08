@@ -2,14 +2,16 @@
 .vscode/
 
 # This file will be generated at build
-src/data.c 
+src/data.c
 
 # Ignore everything in sheets/ except example files
 sheets/*
 !sheets/example_*.txt
+!sheets/README.md
 
 # Ignore __pycache__/ wherever it is
 **/__pycache__/
 
-# Ignore music code/
-music code/
+# Ignore everything except README
+music code/*
+!music code/README.md

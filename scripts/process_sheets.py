@@ -1,7 +1,6 @@
 from generate_music_code import generate_music_code
 from validate_sheet import validate_sheet
 import os
-import shutil
 import sys
 
 sheets_dir = 'sheets'
@@ -21,9 +20,11 @@ if (len(os.listdir(sheets_dir)) == 0):
     sys.exit(1)
 
 # Prepare 'music code/' directory for new build
-if os.path.exists(music_code_dir):
-    shutil.rmtree(music_code_dir)
-os.makedirs(music_code_dir)
+for filename in os.listdir(music_code_dir):
+    # Skip the readme file
+    if filename == 'README.md':
+        continue
+    os.remove(os.path.join(music_code_dir, filename))
 
 files_failed, files_succeed = [], []
 available_file_infos = [] # Store variable name, base name, size of each file
