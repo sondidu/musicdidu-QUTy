@@ -4,7 +4,7 @@
 
 The purpose of having music code is to make parsing during runtime easy and efficient. There are six types of music codes:
 
-- `b{BPM value}`: `b` followed by the BPM value.
+- `b{BPM period value}`: `b` followed by the BPM's period value that is calculated during validation.
 - `a{anacrusis ticks}`: `a` followed by the number of ticks of the anacrusis bar.
 - `t{beats per bar}/{beat value}`: `t` followed by two numbers separated with a `/` representing the beats per bar and beat value respectively.
 - `*{rest ticks}`: `*` followed by the number of ticks it is resting.

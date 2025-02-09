@@ -7,16 +7,16 @@ Each sheet is a `.txt` file that must follow a set of rules to build successfull
 
 ### Setting Block
 A **setting block** follows JSON's syntax closely. It is text enclosed with curly brackets `{}` with **setting fields** separated by a commas `,`, but must all be in a single line. **Setting fields** are case-sensitive and are key-value pairs separated by an equal sign `=`. These are the valid key-value pairs of a **setting field**:
-- `BPM`: Beats per minute is a positive integer above or equal to 64, representing the music's tempo. [Why does it have to be greter than or equal to 64?](#why-bpm--64)
-- `tsig`: Time signature is two positive integers separated by a `/`. The first number represents the **number of beats per bar** (a.k.a beats per measure), and the second number represents the **beat value**. Valid values for beat value are: 1, 2, 4, 8, 16, and 32.
+- `BPM`: Beats Per Minute is two positive integers separated by a `/`. The first number is the desired BPM value, and the second number is the beat value. Valid beat values are: 1, 2, 4, 8, 16, and 32. The beat value can optionally have a `.` to indicate that beat value is a dotted note. Not all possible combinations of BPM and beat values are possible, learn why [here](#some-bpm-and-beat-value-combinations-arent-possible).
+- `tsig`: Time signature is two positive integers separated by a `/`. The first number is the **number of beats per bar** (a.k.a beats per measure), and the second number is the **beat value**. Valid values for beat value are: 1, 2, 4, 8, 16, and 32.
 - `anacrusis`: Anacrusis represents whether the next bar should have its beats validated. By default, all **bars** must have the right number of beats based on the current time signature. To declare the next **bar** an anacrusis bar, set the value to `True`.
 - `skipbars`: The number of bars to skip processing.
 
 Here's an example of a **setting block**:
 `{ BPM=100, tsig=4/4, anacrusis=True }`
 
-#### Why BPM >= 64?
-The BPM (beats per minute) has to be greater than or equal to 64 because that is the lowest BPM value for the QUTy's TCB. The QUTy uses an [ATTINY1626](https://ww1.microchip.com/downloads/en/DeviceDoc/ATtiny1624-26-27-DataSheet-DS40002234A.pdf) microcontroller. The TCB's maximum period value is the maximum value of an unsigned 16-bit integer (65535). The lower the BPM value would require longer delays between interrupts. Any value lower than 64 would require a value larger than 65535, which is not possible. Therefore, the BPM value has to be greater than or equal to 64 for this project.
+#### Why Some BPM and Beat Value Combinations aren't Possible
+Some BPM and beat value combinations aren't posssible because of the hardware limitation of the QUTy's TCB. The QUTy uses an [ATTINY1626](https://ww1.microchip.com/downloads/en/DeviceDoc/ATtiny1624-26-27-DataSheet-DS40002234A.pdf) microcontroller which has a 16-bit timer TCB. Therefore, small BPM values are limited to the TCB's maximum Capture Compare (CCMP) value which is 65535. Examples of the smallest possible values are `64/4` and `128/8` that is 64 BPM with beats as quarter notes and 128 BPM with beats as eighth notes. Any equivalent BPM lower would result in an error.
 
 ### Bar
 Bars represent actual bars in music theory. A bar contains **musical elements** separated by spaces, enclosed in square brackets `[]`, and must all be in a single line. Covering every possible musical element is challenging, so I have decided to limit the scope to three elements: notes, rests, and tuplets. Each bar can have any number of elements as long as it follows each element's rules and the beats add up to the current time signature.
