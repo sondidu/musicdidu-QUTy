@@ -1,4 +1,4 @@
-{ BPM=100, tsig=3/4, anacrusis=True }
+{ BPM=100/4, tsig=3/4, anacrusis=True }
 
 [C4-8-. C4-16]
 [D4-4 C4-4 F4-4] [E4-2 C4-8-. C4-16]

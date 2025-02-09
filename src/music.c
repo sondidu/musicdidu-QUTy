@@ -52,11 +52,9 @@ void parse_music_code(char* music_code) {
             break;
         }
         case PREFIX_BPM: {
-            uint8_t next_bpm = 0;
-            sscanf(music_code + 1, "%hhu", &next_bpm);
+            sscanf(music_code + 1, "%u", &next_bpm_per);
 
             // Calculate BPM's period
-            next_bpm_per = (uint32_t) FREQ_CLK_DIV2 * 60 / next_bpm / PPQN;
             read_next_code = 1;
             break;
         }

@@ -1,4 +1,4 @@
-from constants.block_enclosures import SETTING_CLOSE, SETTING_OPEN
+from constants.music_code import FREQ_CLK_DIV2, PPQN # For BPM validation
 from constants.setting_fields import *
 from custom_errors import FieldError
 
@@ -11,13 +11,35 @@ def field_to_key_val(field: str):
     key, val = field_parts
 
     if key == KEY_BPM:
-        if not val.isnumeric():
-            raise FieldError(field, f"Invalid value '{val}'")
+        parts = val.split(SEP_VAL_BPM)
 
-        if int(val) < BPM_MIN:
-            raise FieldError(field, f"BPM value must be greater than or equal to {BPM_MIN}")
+        if len(parts) != EXPLEN_BPM:
+            raise FieldError(field, f"Invalid BPM '{val}', the format is BPM_value/beat_value")
 
-        val = int(val)
+        bpm_value, beat_value = parts
+
+        if not bpm_value.isnumeric():
+            raise FieldError(field, "BPM Value must be an integer.")
+
+        dotted_note_idx = beat_value.find(BPM_VAL_BEAT_VALUE_DOTTED_NOTE)
+
+        # Handling both if '.' is present or not
+        beat_value_without_dot = beat_value if dotted_note_idx == -1 else beat_value[:dotted_note_idx]
+        if not beat_value_without_dot.isnumeric():
+            raise FieldError(field, f"Beat Value must either be {', '.join(str(num) for num in VALID_BPM_BEAT_VALUES)} optionally followed by a '{BPM_VAL_BEAT_VALUE_DOTTED_NOTE}'")
+
+        if dotted_note_idx != -1 and beat_value[dotted_note_idx:] != BPM_VAL_BEAT_VALUE_DOTTED_NOTE:
+            raise FieldError(field, f"Dotted note must be '{BPM_VAL_BEAT_VALUE_DOTTED_NOTE}'")
+
+        # Handling if the two values are valid
+        beat_value_without_dot = int(beat_value_without_dot)
+        actual_beat_value = beat_value_without_dot if dotted_note_idx == -1 else beat_value_without_dot + beat_value_without_dot // 2
+        bpm_in_quarter_note = int(4 / actual_beat_value * int(bpm_value))
+        bpm_period = FREQ_CLK_DIV2 * 60 // bpm_in_quarter_note // PPQN
+        if bpm_period > 2**16 - 1:
+            raise FieldError(field, f"Invalid BPM and Beat values '{bpm_value}/{beat_value}'. Please try a different value-pair")
+
+        val = bpm_period
     elif key == KEY_SKIPBARS:
         if not val.isnumeric():
             raise FieldError(field, f"Number of bars skipped must be a number")
