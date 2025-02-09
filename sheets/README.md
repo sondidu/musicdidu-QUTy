@@ -13,7 +13,7 @@ A **setting block** follows JSON's syntax closely. It is text enclosed with curl
 - `skipbars`: The number of bars to skip processing.
 
 Here's an example of a **setting block**:
-`{ BPM=100, tsig=4/4, anacrusis=True }`
+`{ BPM=100/4, tsig=4/4, anacrusis=True }`
 
 #### Why Some BPM and Beat Value Combinations aren't Possible
 Some BPM and beat value combinations aren't posssible because of the hardware limitation of the QUTy's TCB. The QUTy uses an [ATTINY1626](https://ww1.microchip.com/downloads/en/DeviceDoc/ATtiny1624-26-27-DataSheet-DS40002234A.pdf) microcontroller which has a 16-bit timer TCB. Therefore, small BPM values are limited to the TCB's maximum Capture Compare (CCMP) value which is 65535. Examples of the smallest possible values are `64/4` and `128/8` that is 64 BPM with beats as quarter notes and 128 BPM with beats as eighth notes. Any equivalent BPM lower would result in an error.
