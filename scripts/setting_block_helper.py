@@ -33,9 +33,10 @@ def field_to_key_val(field: str):
 
         # Handling if the two values are valid
         beat_value_without_dot = int(beat_value_without_dot)
-        actual_beat_value = beat_value_without_dot if dotted_note_idx == -1 else beat_value_without_dot + beat_value_without_dot // 2
-        bpm_in_quarter_note = int(4 / actual_beat_value * int(bpm_value))
-        bpm_period = FREQ_CLK_DIV2 * 60 // bpm_in_quarter_note // PPQN
+        bpm_in_quarter_note = int(bpm_value) * 4 / beat_value_without_dot
+        if dotted_note_idx != -1:
+            bpm_in_quarter_note *= 1.5
+        bpm_period = int(FREQ_CLK_DIV2 * 60 / bpm_in_quarter_note / PPQN)
         if bpm_period > 2**16 - 1:
             raise FieldError(field, f"Invalid BPM and Beat values '{bpm_value}/{beat_value}'. Please try a different value-pair")
 
