@@ -25,7 +25,7 @@ def field_to_key_val(field: str):
 
         # Handling both if '.' is present or not
         beat_value_without_dot = beat_value if dotted_note_idx == -1 else beat_value[:dotted_note_idx]
-        if not beat_value_without_dot.isnumeric():
+        if not beat_value_without_dot.isnumeric() or int(beat_value_without_dot) not in VALID_BPM_BEAT_VALUES:
             raise FieldError(field, f"Beat Value must either be {', '.join(str(num) for num in VALID_BPM_BEAT_VALUES)} optionally followed by a '{BPM_VAL_BEAT_VALUE_DOTTED_NOTE}'")
 
         if dotted_note_idx != -1 and beat_value[dotted_note_idx:] != BPM_VAL_BEAT_VALUE_DOTTED_NOTE:
