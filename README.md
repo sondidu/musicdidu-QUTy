@@ -2,6 +2,9 @@
 
 A music player program designed for the [QUTy](https://cab202.github.io/quty/). You can create your own music by creating `.txt` files following a set of rules, and the board will play it for you! This project involves text validation through Python, custom code generation, and C code to play the music itself.
 
+## Video Demo
+[![Watch the video](https://img.youtube.com/vi/wKthaob6sA0/0.jpg)](https://youtu.be/wKthaob6sA0)
+
 ## How It Works
 There is the [sheets](sheets/) directory, which holds all the music sheets in `.txt` file format. The `.txt` files are validated against a set of [rules](sheets/README.md). After all the sheets are validated, [music code](music%20code/README.md) is generated and stored in the board's flash by generating a `data.c` file in the [src/](src/) directory. If at least one of the sheets is invalid, then the build process fails, and errors are output to the terminal.
 
