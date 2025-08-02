@@ -99,7 +99,8 @@ def generate_music_code(file: TextIO):
                 # Processing setting block
 
                 setting_block = line[block_start_idx:char_idx] # Extract block
-                music_codes_from_setting, is_anacrusis, skip_bars = setting_block_to_music_codes(setting_block)
+                music_codes_from_setting, is_anacrusis, new_skip_bars = setting_block_to_music_codes(setting_block)
+                skip_bars += new_skip_bars
 
                 music_codes.extend(music_codes_from_setting)
 
